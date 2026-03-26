@@ -539,14 +539,15 @@ export function SearchFilters({
 
   const homeMode = hasHome ?? hasHomeLocation;
 
-  // Persist filter state to sessionStorage
+  // Persist filter state to sessionStorage (only from the primary instance, not compactBar)
   useEffect(() => {
+    if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
         orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime, workDays, legs,
       }));
     } catch {}
-  }, [orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime]);
+  }, [orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime, compactBar]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
@@ -560,44 +561,48 @@ export function SearchFilters({
   }, [resetKey, initialTripType]);
 
   // Pre-fill from settings (or restore from sessionStorage)
+  // compactBar instances only mirror state — they never auto-fire searches on mount.
+  // The desktop instance (or MobileFilterSheet when opened) is the sole search trigger.
   const searchEnabled = useRef(false);
   useEffect(() => {
     if (!settings) return;
     if (defaultsLoaded) {
       // Restored from sessionStorage — enable search and fire with restored state
       if (!searchEnabled.current) {
-        setTimeout(() => {
-          searchEnabled.current = true;
-          if (origin) {
-            onOriginChange?.(origin ? { lat: origin.lat, lng: origin.lng, city: origin.name.split(",")[0] } : null);
-            onTripModeChange?.(orders);
-            if (orders === "round-trip") {
-              onSearchRoundTrip({
-                origin_lat: origin.lat,
-                origin_lng: origin.lng,
-                origin_city: origin.name.split(",")[0],
-                legs,
-                risk,
-                ...(homeBy ? { home_by: homeBy } : {}),
-                max_deadhead_pct: maxDeadheadPct,
-                ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
-                ...driverProfile,
-              });
-            } else {
-              if (destination) {
-                onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
+        searchEnabled.current = true;
+        if (!compactBar) {
+          setTimeout(() => {
+            if (origin) {
+              onOriginChange?.(origin ? { lat: origin.lat, lng: origin.lng, city: origin.name.split(",")[0] } : null);
+              onTripModeChange?.(orders);
+              if (orders === "round-trip") {
+                onSearchRoundTrip({
+                  origin_lat: origin.lat,
+                  origin_lng: origin.lng,
+                  origin_city: origin.name.split(",")[0],
+                  legs,
+                  risk,
+                  ...(homeBy ? { home_by: homeBy } : {}),
+                  max_deadhead_pct: maxDeadheadPct,
+                  ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
+                  ...driverProfile,
+                });
+              } else {
+                if (destination) {
+                  onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
+                }
+                onSearch({
+                  origin_lat: origin.lat,
+                  origin_lng: origin.lng,
+                  ...(destination ? { dest_lat: destination.lat, dest_lng: destination.lng } : {}),
+                  legs,
+                  trailer_types: driverProfile.trailer_types,
+                  ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
+                });
               }
-              onSearch({
-                origin_lat: origin.lat,
-                origin_lng: origin.lng,
-                ...(destination ? { dest_lat: destination.lat, dest_lng: destination.lng } : {}),
-                legs,
-                trailer_types: driverProfile.trailer_types,
-                ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
-              });
             }
-          }
-        }, 0);
+          }, 0);
+        }
       }
       return;
     }
@@ -608,20 +613,22 @@ export function SearchFilters({
       setOrders("round-trip");
     }
     setDefaultsLoaded(true);
-    setTimeout(() => {
-      searchEnabled.current = true;
-      if (homePlace) {
-        onSearchRoundTrip({
-          origin_lat: homePlace.lat,
-          origin_lng: homePlace.lng,
-          origin_city: homePlace.name.split(",")[0],
-          legs,
-          risk,
-          max_deadhead_pct: maxDeadheadPct,
-          ...driverProfile,
-        });
-      }
-    }, 0);
+    searchEnabled.current = true;
+    if (!compactBar) {
+      setTimeout(() => {
+        if (homePlace) {
+          onSearchRoundTrip({
+            origin_lat: homePlace.lat,
+            origin_lng: homePlace.lng,
+            origin_city: homePlace.name.split(",")[0],
+            legs,
+            risk,
+            max_deadhead_pct: maxDeadheadPct,
+            ...driverProfile,
+          });
+        }
+      }, 0);
+    }
   }, [settings, defaultsLoaded]);
 
   // Reset locations when trip type changes
