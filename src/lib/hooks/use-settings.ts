@@ -23,6 +23,8 @@ export interface Settings {
   truck_payment_per_day: number | null;
   insurance_per_day: number | null;
   per_diem_per_day: number | null;
+  max_downtime_hours: number | null;
+  work_days: string[] | null;
   disabled_settings?: string[];
   last_login: string;
 }

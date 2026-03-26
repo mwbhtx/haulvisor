@@ -39,7 +39,7 @@ export default function MapPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
-  const [mobileSortBy, setMobileSortBy] = useState<SortKey>("score");
+  const [mobileSortBy, setMobileSortBy] = useState<SortKey>("daily_profit");
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -48,6 +48,7 @@ export default function MapPage() {
   }, []);
 
   const [tripMode, setTripMode] = useState<"one-way" | "round-trip">("round-trip");
+  const [filterPending, setFilterPending] = useState(false);
   const hoverLegRef = useRef<((legIndex: number | null) => void) | null>(null);
 
   const { data, isLoading, isFetched } = useRouteSearch(activeCompanyId ?? "", searchParams);
@@ -131,6 +132,7 @@ export default function MapPage() {
   const displayLocation = selectedLocation ?? EMPTY_LOCATION;
 
   const handleSearch = (p: RouteSearchParams) => {
+    setFilterPending(false);
     setSearchParams(p);
     setRoundTripParams(null);
     setSelectedLocation(null);
@@ -139,6 +141,7 @@ export default function MapPage() {
   };
 
   const handleSearchRoundTrip = (p: RoundTripSearchParams) => {
+    setFilterPending(false);
     setRoundTripParams(p);
     setSearchParams(null);
     setSelectedLocation(null);
@@ -172,6 +175,10 @@ export default function MapPage() {
     const homeRoutes = roundTripResults?.routes ?? [];
     if (homeRoutes.length === 0 || roundTripParams === null) return;
     const origin = roundTripResults!.origin;
+    // Order multi-leg first so initial selection matches sidebar rendering
+    const multiLeg = homeRoutes.filter((c) => c.legs.length > 1);
+    const singleLeg = homeRoutes.filter((c) => c.legs.length === 1);
+    const ordered = [...multiLeg, ...singleLeg];
     setSelectedLocation({
       city: origin.city,
       state: origin.state,
@@ -179,10 +186,10 @@ export default function MapPage() {
       lng: origin.lng,
       orders: [],
       routeChains: [],
-      roundTripChains: homeRoutes,
+      roundTripChains: ordered,
     });
     setSelectedItemIndex(0);
-    setSelectedRouteLegs(homeRoutes[0]?.legs ?? null);
+    setSelectedRouteLegs(ordered[0]?.legs ?? null);
   }, [roundTripResults, roundTripParams]);
 
   // Populate sidebar when one-way results arrive
@@ -229,6 +236,7 @@ export default function MapPage() {
       onTripModeChange={setTripMode}
       onOriginChange={setOriginFilter}
       onDestinationChange={setDestFilter}
+      onFilterPending={() => setFilterPending(true)}
       hasHome={hasHomeBase}
       resetKey={filterResetKey}
       initialTripType="round-trip"
@@ -255,6 +263,7 @@ export default function MapPage() {
             onTripModeChange={setTripMode}
             onOriginChange={setOriginFilter}
             onDestinationChange={setDestFilter}
+            onFilterPending={() => setFilterPending(true)}
             hasHome={hasHomeBase}
             resetKey={filterResetKey}
             initialTripType="round-trip"
@@ -270,7 +279,7 @@ export default function MapPage() {
             onClearFilters={hasActiveSearch ? handleClearSearch : undefined}
             maxWeight={settings?.max_weight ?? null}
             orderCount={orderCount}
-            isLoading={!ready || isLoading || isRoundTripLoading || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
+            isLoading={!ready || isLoading || isRoundTripLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
             originFilter={originFilter}
             destFilter={destFilter}
             costPerMile={(settings?.cost_per_mile as number | undefined) ?? 1.5}
@@ -290,6 +299,7 @@ export default function MapPage() {
           onTripModeChange={setTripMode}
           onOriginChange={setOriginFilter}
           onDestinationChange={setDestFilter}
+          onFilterPending={() => setFilterPending(true)}
           hasHome={hasHomeBase}
           resetKey={filterResetKey}
           initialTripType="round-trip"

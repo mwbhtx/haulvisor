@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useCallback, useEffect, useState } from "react";
+import React, { useRef, useCallback, useEffect, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, FlameIcon, BookmarkIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { RouteChain, RoundTripChain, RoundTripLeg, LocationGroup } from "@/lib/types";
 import { LEG_COLORS } from "@/lib/route-colors";
-import { rateColor, netRateColor } from "@/lib/rate-color";
+import { rateColor, netRateColor, routeProfitColor } from "@/lib/rate-color";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -115,19 +115,17 @@ function routeKey(legs: { order_id?: string }[]): string {
   return legs.map((l) => l.order_id ?? "spec").join("|");
 }
 
-type SortKey = "score" | "profit" | "daily_profit" | "deadhead";
+type SortKey = "daily_profit" | "profit" | "deadhead";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "score", label: "Score" },
-  { key: "profit", label: "Profit" },
   { key: "daily_profit", label: "$/Day" },
+  { key: "profit", label: "Profit" },
   { key: "deadhead", label: "DH %" },
 ];
 
 function sortRoundTripChains(chains: RoundTripChain[], sortBy: SortKey): RoundTripChain[] {
   const sorted = [...chains];
   switch (sortBy) {
-    case "score": sorted.sort((a, b) => b.route_score - a.route_score); break;
     case "profit": sorted.sort((a, b) => b.firm_profit - a.firm_profit); break;
     case "daily_profit": sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit); break;
     case "deadhead": sorted.sort((a, b) => a.deadhead_pct - b.deadhead_pct); break;
@@ -159,6 +157,7 @@ export function MobileCarousel({ location, selectedIndex, onSelectIndex, originC
     } catch { return new Set(); }
   });
   const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
+  const [showSingleLeg, setShowSingleLeg] = useState(false);
 
   const toggleWatchlist = useCallback((key: string) => {
     setWatchlist((prev) => {
@@ -178,24 +177,33 @@ export function MobileCarousel({ location, selectedIndex, onSelectIndex, originC
     : location.routeChains.map(routeChainToRoundTrip);
 
   const sorted = sortRoundTripChains(rawChains, sortBy);
-  const chains = showWatchlistOnly
+  const filtered = showWatchlistOnly
     ? sorted.filter((c) => watchlist.has(routeKey(c.legs)))
     : sorted;
+
+  // Split into multi-leg and single-leg groups (multi-leg shown first)
+  const multiLegChains = filtered.filter((c) => c.legs.length > 1);
+  const singleLegChains = filtered.filter((c) => c.legs.length === 1);
+  const chains = showSingleLeg ? [...multiLegChains, ...singleLegChains] : (isRoundTripMode ? multiLegChains : filtered);
+  const hasDivider = isRoundTripMode && showSingleLeg && multiLegChains.length > 0 && singleLegChains.length > 0;
+  const dividerInsertIndex = multiLegChains.length; // index in chains array where divider appears before
 
   const itemCount = chains.length;
 
   // Scroll to selected index when it changes externally
-  // +1 offset to skip leading spacer element
+  // +1 offset to skip leading spacer element, +1 more if after the divider
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
-    const card = container.children[selectedIndex + 1] as HTMLElement | undefined;
+    let domIndex = selectedIndex + 1; // +1 for leading spacer
+    if (hasDivider && selectedIndex >= dividerInsertIndex) domIndex += 1; // +1 for divider element
+    const card = container.children[domIndex] as HTMLElement | undefined;
     if (card) {
       card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
-  }, [selectedIndex]);
+  }, [selectedIndex, hasDivider, dividerInsertIndex]);
 
-  // Detect which card snapped into view (skip spacer elements at index 0 and last)
+  // Detect which card snapped into view (skip spacer and divider elements)
   const handleScroll = useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -204,20 +212,24 @@ export function MobileCarousel({ location, selectedIndex, onSelectIndex, originC
     let closestIndex = 0;
     let closestDist = Infinity;
     const childCount = container.children.length;
-    // Skip first and last children (spacers)
+    // DOM index of the divider element (after leading spacer): 1 + dividerInsertIndex
+    const dividerDomIdx = hasDivider ? 1 + dividerInsertIndex : -1;
+    // Skip first and last children (spacers) and the divider
     for (let i = 1; i < childCount - 1; i++) {
+      if (i === dividerDomIdx) continue; // skip divider
       const child = container.children[i] as HTMLElement;
       const childCenter = child.offsetLeft + child.offsetWidth / 2;
       const dist = Math.abs(childCenter - (scrollLeft + containerWidth / 2));
       if (dist < closestDist) {
         closestDist = dist;
-        closestIndex = i - 1; // map back to chain index
+        // Map DOM index back to chain index: subtract 1 for spacer, subtract 1 more if after divider
+        closestIndex = i - 1 - (hasDivider && i > dividerDomIdx ? 1 : 0);
       }
     }
     if (closestIndex !== selectedIndex) {
       onSelectIndex(closestIndex, chains[closestIndex]?.legs);
     }
-  }, [selectedIndex, onSelectIndex, chains]);
+  }, [selectedIndex, onSelectIndex, chains, hasDivider, dividerInsertIndex]);
 
   // Use scrollend for snap detection (with fallback timeout for Safari)
   useEffect(() => {
@@ -256,18 +268,41 @@ export function MobileCarousel({ location, selectedIndex, onSelectIndex, originC
         {/* Leading spacer to center first card */}
         <div className="shrink-0" style={{ width: "calc((100% - 92%) / 2 - 6px)" }} />
         {chains.map((chain, i) => (
-          <FullDetailCard
-            key={i}
-            chain={chain}
-            rank={i + 1}
-            originCity={originCity}
-            destCity={destCity}
-            isWatchlisted={watchlist.has(routeKey(chain.legs))}
-            onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
-            orderUrlTemplate={orderUrlTemplate}
-            costPerMile={costPerMile}
-          />
+          <React.Fragment key={i}>
+            {hasDivider && i === dividerInsertIndex && (
+              <div className="shrink-0 flex items-center justify-center snap-center" style={{ width: "60%" }}>
+                <div className="flex items-center gap-3 px-4">
+                  <div className="w-8 h-px bg-border" />
+                  <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Single Leg Routes</span>
+                  <div className="w-8 h-px bg-border" />
+                </div>
+              </div>
+            )}
+            <FullDetailCard
+              chain={chain}
+              rank={i + 1}
+              originCity={originCity}
+              destCity={destCity}
+              isWatchlisted={watchlist.has(routeKey(chain.legs))}
+              onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
+              orderUrlTemplate={orderUrlTemplate}
+              costPerMile={costPerMile}
+            />
+          </React.Fragment>
         ))}
+        {/* Reveal button for single-leg routes */}
+        {isRoundTripMode && singleLegChains.length > 0 && !showSingleLeg && (
+          <div className="shrink-0 flex items-end pb-2 snap-center" style={{ width: "75%" }}>
+            <button
+              type="button"
+              onClick={() => setShowSingleLeg(true)}
+              className="w-full rounded-xl border border-dashed border-primary/40 bg-card px-4 py-6 text-center"
+            >
+              <p className="text-sm font-medium text-foreground">Show Single Leg Routes</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{singleLegChains.length} available</p>
+            </button>
+          </div>
+        )}
         {/* Trailing spacer to center last card */}
         <div className="shrink-0" style={{ width: "calc((100% - 92%) / 2 - 6px)" }} />
       </div>
@@ -310,10 +345,9 @@ function FullDetailCard({
   return (
     <div className="snap-center shrink-0 w-[92%] h-full bg-card border rounded-2xl overflow-y-auto flex flex-col">
       <div className="p-4">
-        {/* Score badge + bookmark */}
+        {/* Date range + bookmark */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <RouteScoreBadge score={chain.route_score} />
             {startDate && (
               <span className="text-sm text-muted-foreground">{startDate}{endDate ? ` – ${endDate}` : ""}</span>
             )}
@@ -333,15 +367,15 @@ function FullDetailCard({
         <div className="grid grid-cols-4 gap-2 text-center">
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Profit</p>
-            <p className={`text-xl font-bold tabular-nums ${profit >= 0 ? "text-green-500" : "text-red-500"}`}>{formatCurrency(profit)}</p>
+            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>{formatCurrency(profit)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">$/Day</p>
-            <p className={`text-xl font-bold tabular-nums ${chain.daily_net_profit >= 0 ? "text-green-500" : "text-red-500"}`}>{formatCurrency(chain.daily_net_profit)}</p>
+            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>{formatCurrency(chain.daily_net_profit)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">$/Mi</p>
-            <p className={`text-xl font-bold tabular-nums ${netRateColor(chain.effective_rpm)}`}>{formatRpm(chain.effective_rpm)}</p>
+            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>{formatRpm(chain.effective_rpm)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Gross</p>

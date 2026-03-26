@@ -60,10 +60,12 @@ export default function SettingsPage() {
   const [perDiemPerDay, setPerDiemPerDay] = useState("");
   const [maxWeight, setMaxWeight] = useState("");
   const [maxAssigned, setMaxAssigned] = useState("");
+  const [maxDowntime, setMaxDowntime] = useState("");
   const [trailerLabels, setTrailerLabels] = useState<string[]>([]);
   const [hazmatCertified, setHazmatCertified] = useState(false);
   const [twicCard, setTwicCard] = useState(false);
   const [teamDriver, setTeamDriver] = useState(false);
+  const [workDays, setWorkDays] = useState<string[]>([]);
 
   // Track whether initial sync has happened to avoid triggering saves
   const initialized = useRef(false);
@@ -86,10 +88,12 @@ export default function SettingsPage() {
     setPerDiemPerDay(settings.per_diem_per_day != null ? String(settings.per_diem_per_day) : "");
     setMaxWeight(settings.max_weight != null ? String(settings.max_weight) : "");
     setMaxAssigned(settings.max_assigned_orders != null ? String(settings.max_assigned_orders) : "");
+    setMaxDowntime(settings.max_downtime_hours != null ? String(settings.max_downtime_hours) : "");
     setTrailerLabels(codesToLabels(settings.trailer_types ?? []));
     setHazmatCertified(settings.hazmat_certified ?? false);
     setTwicCard(settings.twic_card ?? false);
     setTeamDriver(settings.team_driver ?? false);
+    setWorkDays(settings.work_days ?? []);
     // Mark initialized after a tick so the first render doesn't trigger saves
     setTimeout(() => { initialized.current = true; }, 100);
   }, [settings]);
@@ -416,6 +420,27 @@ export default function SettingsPage() {
             </p>
           </div>
 
+          {/* Max Downtime Between Legs */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium mb-2 block">Max Downtime Between Legs</label>
+            <select
+              value={maxDowntime}
+              onChange={(e) => handleNumberChange("max_downtime_hours", e.target.value, setMaxDowntime)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">Not set (use filter bar)</option>
+              <option value="24">1 Day</option>
+              <option value="48">2 Days</option>
+              <option value="72">3 Days</option>
+              <option value="96">4 Days</option>
+              <option value="120">5 Days</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Maximum idle time between delivering one load and picking up the next.
+              This sets your default — you can still override it on the filter bar.
+            </p>
+          </div>
+
           <Separator />
 
           {/* Trailer Types */}
@@ -467,6 +492,68 @@ export default function SettingsPage() {
               checked={teamDriver}
               onChange={() => handleBoolToggle("team_driver", teamDriver, setTeamDriver)}
             />
+          </div>
+
+          <Separator />
+
+          {/* Work Days */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium mb-2 block">Work Days</label>
+            <div className="flex flex-wrap gap-2">
+              {(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const).map((day) => {
+                const allSelected = workDays.length === 0 || workDays.length === 7;
+                const selected = allSelected || workDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      const next = workDays.includes(day)
+                        ? workDays.filter((d) => d !== day)
+                        : [...workDays, day];
+                      const resolved = next.length === 7 ? [] : next;
+                      setWorkDays(resolved);
+                      if (initialized.current) save({ work_days: resolved.length > 0 ? resolved : null });
+                    }}
+                    className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                      selected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-transparent hover:bg-accent hover:text-accent-foreground"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setWorkDays([]);
+                  if (initialized.current) save({ work_days: null });
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                All days
+              </button>
+              <span className="text-xs text-muted-foreground">/</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+                  setWorkDays(weekdays);
+                  if (initialized.current) save({ work_days: weekdays });
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Weekdays only
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Routes won&apos;t include pickups or deliveries on your off days.
+              Select all or leave empty to disable.
+            </p>
           </div>
 
           <Separator />

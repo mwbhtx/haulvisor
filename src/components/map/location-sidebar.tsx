@@ -9,7 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { fetchApi } from "@/lib/api";
 import type { RouteChain, RoundTripChain, RoundTripLeg, LocationGroup } from "@/lib/types";
 import { LEG_COLORS } from "@/lib/route-colors";
-import { rateColor, netRateColor } from "@/lib/rate-color";
+import { rateColor, netRateColor, routeProfitColor } from "@/lib/rate-color";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -89,19 +89,17 @@ interface LocationSidebarProps {
   onHoverLeg?: (legIndex: number | null) => void;
 }
 
-type SortKey = "score" | "profit" | "daily_profit" | "deadhead";
+type SortKey = "daily_profit" | "profit" | "deadhead";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "score", label: "Score" },
-  { key: "profit", label: "Profit" },
   { key: "daily_profit", label: "$/Day" },
+  { key: "profit", label: "Profit" },
   { key: "deadhead", label: "DH %" },
 ];
 
 function sortRouteChains(chains: RouteChain[], sortBy: SortKey): RouteChain[] {
   const sorted = [...chains];
   switch (sortBy) {
-    case "score": sorted.sort((a, b) => b.route_score - a.route_score); break;
     case "profit": sorted.sort((a, b) => b.profit - a.profit); break;
     case "daily_profit": sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit); break;
     case "deadhead": sorted.sort((a, b) => a.deadhead_pct - b.deadhead_pct); break;
@@ -112,7 +110,6 @@ function sortRouteChains(chains: RouteChain[], sortBy: SortKey): RouteChain[] {
 function sortRoundTripChains(chains: RoundTripChain[], sortBy: SortKey): RoundTripChain[] {
   const sorted = [...chains];
   switch (sortBy) {
-    case "score": sorted.sort((a, b) => b.route_score - a.route_score); break;
     case "profit": sorted.sort((a, b) => b.firm_profit - a.firm_profit); break;
     case "daily_profit": sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit); break;
     case "deadhead": sorted.sort((a, b) => a.deadhead_pct - b.deadhead_pct); break;
@@ -128,7 +125,7 @@ function routeKey(legs: { order_id?: string }[]): string {
 export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClose, onClearFilters, orderCount, maxWeight, isLoading, originFilter, destFilter, costPerMile = 1.5, orderUrlTemplate, onHoverLeg }: LocationSidebarProps) {
   const { activeCompanyId } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [sortBy, setSortBy] = useState<SortKey>("score");
+  const [sortBy, setSortBy] = useState<SortKey>("daily_profit");
   const [commentsDialog, setCommentsDialog] = useState<{ orderId: string; comments: string; loading: boolean } | null>(null);
 
   const handleShowComments = useCallback(async (orderId: string) => {
@@ -162,6 +159,7 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
     } catch { return new Set(); }
   });
   const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
+  const [showSingleLeg, setShowSingleLeg] = useState(false);
 
   const toggleWatchlist = useCallback((key: string) => {
     setWatchlist((prev) => {
@@ -186,8 +184,12 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
     ? allSortedRoutes.filter((r) => watchlist.has(routeKey(r.legs)))
     : allSortedRoutes;
 
+  // Split round-trip results into multi-leg and single-leg groups
+  const multiLegChains = sortedRoundTrips.filter((c) => c.legs.length > 1);
+  const singleLegChains = sortedRoundTrips.filter((c) => c.legs.length === 1);
+
   const itemCount = isRoundTripMode
-    ? sortedRoundTrips.length
+    ? (showSingleLeg ? sortedRoundTrips.length : multiLegChains.length)
     : sortedRoutes.length;
 
   return (
@@ -268,24 +270,61 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
             )}
           </div>
         ) : isRoundTripMode
-          ? sortedRoundTrips.map((chain, i) => (
-              <RoundTripChainCard
-                key={`${chain.legs[0]?.order_id ?? i}-${i}`}
-                chain={chain}
-                rank={i + 1}
-                routeIdx={i}
-                isSelected={i === selectedIndex}
-                onClick={() => onSelectIndex(i, chain.legs)}
-                maxWeight={maxWeight}
-                originCity={location.city}
-                isWatchlisted={watchlist.has(routeKey(chain.legs))}
-                onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
-                orderUrlTemplate={orderUrlTemplate}
-                onShowComments={handleShowComments}
-                onHoverLeg={onHoverLeg}
-                costPerMile={costPerMile}
-              />
-            ))
+          ? (() => {
+              const visible = showSingleLeg ? [...multiLegChains, ...singleLegChains] : multiLegChains;
+              const items: React.ReactNode[] = [];
+              visible.forEach((chain, i) => {
+                if (showSingleLeg && i === multiLegChains.length && singleLegChains.length > 0) {
+                  items.push(
+                    <button
+                      key="single-leg-divider"
+                      type="button"
+                      onClick={() => setShowSingleLeg(false)}
+                      className="w-full flex items-center gap-3 py-2 px-1 group"
+                    >
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
+                        Single Leg Routes &times;
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </button>,
+                  );
+                }
+                items.push(
+                  <RoundTripChainCard
+                    key={`${chain.legs[0]?.order_id ?? i}-${i}`}
+                    chain={chain}
+                    rank={i + 1}
+                    routeIdx={i}
+                    isSelected={i === selectedIndex}
+                    onClick={() => onSelectIndex(i, chain.legs)}
+                    maxWeight={maxWeight}
+                    originCity={location.city}
+                    isWatchlisted={watchlist.has(routeKey(chain.legs))}
+                    onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
+                    orderUrlTemplate={orderUrlTemplate}
+                    onShowComments={handleShowComments}
+                    onHoverLeg={onHoverLeg}
+                    costPerMile={costPerMile}
+                  />,
+                );
+              });
+              // Show reveal button for single-leg results
+              if (singleLegChains.length > 0 && !showSingleLeg) {
+                items.push(
+                  <button
+                    key="show-single-leg"
+                    type="button"
+                    onClick={() => setShowSingleLeg(true)}
+                    className="w-full rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 px-5 py-5 text-center transition-colors"
+                  >
+                    <p className="text-base font-semibold text-foreground">Show Single Leg Routes</p>
+                    <p className="text-sm text-muted-foreground mt-1">{singleLegChains.length} single leg route{singleLegChains.length !== 1 ? "s" : ""} with return analysis</p>
+                  </button>,
+                );
+              }
+              return items;
+            })()
           : sortedRoutes.map((route, i) => (
               <RoundTripChainCard
                 key={`${route.legs[0]?.order_id ?? i}-${i}`}
@@ -462,21 +501,17 @@ function RoundTripChainCard({
           </div>
         )}
 
-        {/* 5 key metrics + bookmark */}
+        {/* Key metrics + bookmark */}
         <div className="flex justify-around text-center items-center">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Score</p>
-            <p className={`text-lg font-bold tabular-nums ${chain.route_score >= 70 ? "text-green-500" : chain.route_score >= 40 ? "text-yellow-500" : "text-red-500"}`}>{chain.route_score}</p>
-          </div>
-          <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Profit</p>
-            <p className={`text-lg font-bold tabular-nums ${profit >= 0 ? "text-green-500" : "text-red-500"}`}>
+            <p className={`text-lg font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
               {formatCurrency(profit)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">$/Day</p>
-            <p className={`text-lg font-bold tabular-nums ${chain.daily_net_profit >= 0 ? "text-green-500" : "text-red-500"}`}>
+            <p className={`text-lg font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
               {formatCurrency(chain.daily_net_profit)}
             </p>
           </div>
@@ -503,7 +538,7 @@ function RoundTripChainCard({
 
         {/* Secondary info pills */}
         <div className="flex flex-wrap gap-1.5 mt-2">
-          <span className={`rounded-full border px-3 py-1 text-sm ${netRateColor(chain.effective_rpm)}`}>
+          <span className={`rounded-full border px-3 py-1 text-sm ${routeProfitColor(chain.daily_net_profit)}`}>
             {formatRpm(chain.effective_rpm)} net
           </span>
           <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">

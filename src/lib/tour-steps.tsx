@@ -104,7 +104,9 @@ export const tourSteps: Tour[] = [
         content: (
           <p>
             Fine-tune your search with <span className={hl}>trailer type</span>, <span className={hl}>weight limits</span>,{" "}
-            <span className={hl}>hazmat</span>, <span className={hl}>TWIC</span>, and <span className={hl}>risk</span> preferences.
+            <span className={hl}>hazmat</span>, <span className={hl}>TWIC</span>, <span className={hl}>risk</span>, and{" "}
+            <span className={hl}>work days</span>. Set your work days to avoid routes
+            that require pickups or deliveries on your off days.
           </p>
         ),
         selector: "#onborda-all-filters",

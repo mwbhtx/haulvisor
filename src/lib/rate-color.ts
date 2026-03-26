@@ -30,3 +30,18 @@ export function netRateColor(netPerMile: number): string {
   if (netPerMile >= 0.5) return "text-yellow-500";
   return "text-red-500";
 }
+
+/**
+ * Returns a Tailwind text color class for route profitability metrics
+ * (profit, $/day, $/mi net) based on daily net profit.
+ *
+ * $/day is the truest measure of whether a route is worth the driver's time.
+ *   Green:  >= $300/day — solid income (~$100k+/yr)
+ *   Yellow: >= $150/day — break-even to okay, covering bills
+ *   Red:    < $150/day  — not worth the time
+ */
+export function routeProfitColor(dailyNetProfit: number): string {
+  if (dailyNetProfit >= 300) return "text-green-500";
+  if (dailyNetProfit >= 150) return "text-yellow-500";
+  return "text-red-500";
+}

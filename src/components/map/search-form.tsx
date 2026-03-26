@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, LocateIcon, SlidersHorizontal, XIcon } from "lucide-react";
+import { ChevronDown, ChevronUpIcon, LocateIcon, SlidersHorizontal, XIcon } from "lucide-react";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { Calendar } from "@/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/lib/hooks/use-settings";
@@ -259,6 +259,10 @@ function DeadheadPctPill({ value, onChange }: { value: number; onChange: (v: num
   );
 }
 
+/* ---- Work Days constants (used in AllFiltersPopover) ---- */
+
+const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
 /* ---- Home By Pill (calendar popover) ---- */
 
 function HomeByPill({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -355,6 +359,7 @@ function LocationPill({
   homeCityLabel,
   onUseMyLocation,
   pulse,
+  onOpenChange: onOpenChangeProp,
 }: {
   label: string;
   title: string;
@@ -364,11 +369,12 @@ function LocationPill({
   homeCityLabel?: string;
   onUseMyLocation?: () => void;
   pulse?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); onOpenChangeProp?.(o); }}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -440,6 +446,8 @@ interface SearchFiltersProps {
   onTripModeChange?: (mode: "one-way" | "round-trip") => void;
   onOriginChange?: (origin: { lat: number; lng: number; city: string } | null) => void;
   onDestinationChange?: (dest: { lat: number; lng: number; city: string } | null) => void;
+  /** Fires immediately when a filter changes, before the debounced search fires */
+  onFilterPending?: () => void;
   hasHome?: boolean;
   resetKey?: number;
   initialTripType?: "one-way" | "round-trip";
@@ -459,6 +467,7 @@ export function SearchFilters({
   onTripModeChange,
   onOriginChange,
   onDestinationChange,
+  onFilterPending,
   hasHome,
   resetKey,
   initialTripType,
@@ -471,7 +480,7 @@ export function SearchFilters({
   const updateSettings = useUpdateSettings();
 
   const driverProfile = settings ? {
-    trailer_types: settings.trailer_types?.length ? settings.trailer_types.join(',') : undefined,
+    trailer_types: settings.trailer_types?.length ? settings.trailer_types.join('|') : undefined,
     max_weight: settings.max_weight ?? undefined,
     hazmat_certified: settings.hazmat_certified ?? undefined,
     twic_card: settings.twic_card ?? undefined,
@@ -489,7 +498,7 @@ export function SearchFilters({
   // Restore persisted filter state from sessionStorage
   const restored = useRef<{
     orders?: string; risk?: RiskLevel; origin?: PlaceResult | null;
-    destination?: PlaceResult | null; homeBy?: string; maxDeadheadPct?: number; maxDowntime?: number; legs?: number;
+    destination?: PlaceResult | null; homeBy?: string; maxDeadheadPct?: number; maxDowntime?: number; workDays?: string[]; legs?: number;
   } | null>(null);
   if (restored.current === null && typeof window !== "undefined") {
     try {
@@ -503,10 +512,12 @@ export function SearchFilters({
   const [orders, setOrders] = useState(initialOrders);
   const [risk, setRisk] = useState<RiskLevel>(r.risk ?? "any");
   const [origin, setOrigin] = useState<PlaceResult | null>(r.origin ?? null);
+  const [originPopoverOpen, setOriginPopoverOpen] = useState(false);
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
   const [homeBy, setHomeBy] = useState<string>(r.homeBy ?? "");
   const [maxDeadheadPct, setMaxDeadheadPct] = useState(r.maxDeadheadPct ?? 15);
-  const [maxDowntime, setMaxDowntime] = useState<number>(r.maxDowntime ?? 48);
+  const [maxDowntime, setMaxDowntime] = useState<number>(r.maxDowntime ?? settings?.max_downtime_hours ?? 48);
+  const [workDays, setWorkDays] = useState<string[]>(r.workDays ?? settings?.work_days ?? []);
   const [legs, setLegs] = useState<number>(r.legs ?? (initialOrders === "one-way" ? 1 : 2));
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
 
@@ -529,7 +540,7 @@ export function SearchFilters({
   useEffect(() => {
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime, legs,
+        orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime, workDays, legs,
       }));
     } catch {}
   }, [orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime]);
@@ -651,6 +662,9 @@ export function SearchFilters({
     }
   }, [orders]);
 
+  // Stable key for driver profile so it can be a useEffect dependency
+  const profileKey = JSON.stringify(driverProfile);
+
   // Fire search (shared helper)
   const fireSearch = useCallback(() => {
     if (!origin) {
@@ -679,7 +693,7 @@ export function SearchFilters({
         ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
       });
     }
-  }, [origin, destination, orders, risk, homeMode, homeBy, maxDeadheadPct, maxDowntime, legs, onClearSearch]);
+  }, [origin, destination, orders, risk, homeMode, homeBy, maxDeadheadPct, maxDowntime, legs, profileKey, onClearSearch]);
 
   // Auto-search on filter changes (only after initial load settles)
   // Note: orders is NOT a trigger here — trip type changes are handled by prevTripType effect
@@ -687,6 +701,15 @@ export function SearchFilters({
     if (!searchEnabled.current) return;
     fireSearch();
   }, [risk, homeBy, maxDeadheadPct, legs]);
+
+  // Auto-search on driver profile or max downtime changes (debounced)
+  // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
+  useEffect(() => {
+    if (!searchEnabled.current) return;
+    onFilterPending?.();
+    const id = setTimeout(() => fireSearch(), 1000);
+    return () => clearTimeout(id);
+  }, [profileKey, maxDowntime]);
 
   useEffect(() => {
     if (!searchEnabled.current) return;
@@ -777,6 +800,7 @@ export function SearchFilters({
         homeCityLabel={hasHomeLocation ? settings!.home_base_city! : undefined}
         onUseMyLocation={handleUseMyLocation}
         pulse={false}
+        onOpenChange={setOriginPopoverOpen}
       />
     </div>
   );
@@ -880,10 +904,10 @@ export function SearchFilters({
         {/* Expandable filter overlay */}
         {mobileFiltersOpen && (
           <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/50">
-            {isRoundTrip && <HomeByPill value={homeBy} onChange={setHomeBy} />}
+            <HomeByPill value={homeBy} onChange={setHomeBy} />
             <MaxDowntimePill value={maxDowntime} onChange={setMaxDowntime} />
             <DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} />
-            <AllFiltersPopover risk={risk} onRiskChange={setRisk} />
+            <AllFiltersPopover risk={risk} onRiskChange={setRisk} workDays={workDays} onWorkDaysChange={setWorkDays} />
           </div>
         )}
       </div>
@@ -891,16 +915,40 @@ export function SearchFilters({
   }
 
   /* ---- Desktop layout ---- */
+  const [showNudge, setShowNudge] = useState(false);
+  useEffect(() => {
+    if (!origin && defaultsLoaded && searchEnabled.current && !originPopoverOpen) {
+      setShowNudge(true);
+    } else {
+      setShowNudge(false);
+    }
+  }, [origin, defaultsLoaded, originPopoverOpen]);
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {tripTypePill}
-      {originPill}
+      <div className="relative">
+        {originPill}
+        {showNudge && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20">
+            <div className="flex justify-center mb-1">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black border-2 border-primary animate-bounce">
+                <ChevronUpIcon className="h-4 w-4 text-primary" strokeWidth={3} />
+              </div>
+            </div>
+            <div className="bg-card border-2 border-primary rounded-xl shadow-lg px-5 py-4 w-64">
+              <p className="text-base text-foreground font-semibold">Set an origin</p>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">Pick a starting city to get route suggestions</p>
+            </div>
+          </div>
+        )}
+      </div>
       {destPill}
       {legsPill}
-      {isRoundTrip && <div id="onborda-home-by"><HomeByPill value={homeBy} onChange={setHomeBy} /></div>}
+      <div id="onborda-home-by"><HomeByPill value={homeBy} onChange={setHomeBy} /></div>
       <div id="onborda-downtime"><MaxDowntimePill value={maxDowntime} onChange={setMaxDowntime} /></div>
       <div id="onborda-deadhead"><DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} /></div>
-      <div id="onborda-all-filters"><AllFiltersPopover risk={risk} onRiskChange={setRisk} /></div>
+      <div id="onborda-all-filters"><AllFiltersPopover risk={risk} onRiskChange={setRisk} workDays={workDays} onWorkDaysChange={setWorkDays} /></div>
       {clearButton}
     </div>
   );
@@ -946,9 +994,13 @@ export function MobileFilterSheet({ open, onOpenChange, ...filterProps }: Mobile
 function AllFiltersPopover({
   risk,
   onRiskChange,
+  workDays,
+  onWorkDaysChange,
 }: {
   risk: RiskLevel;
   onRiskChange: (r: RiskLevel) => void;
+  workDays: string[];
+  onWorkDaysChange: (v: string[]) => void;
 }) {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
@@ -997,6 +1049,7 @@ function AllFiltersPopover({
     twic,
     team,
     risk !== "any",
+    workDays.length > 0 && workDays.length < 7,
   ].filter(Boolean).length;
 
   return (
@@ -1007,7 +1060,12 @@ function AllFiltersPopover({
           className="flex h-9 items-center gap-1.5 rounded-full border bg-card/95 backdrop-blur px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span>All Filters{activeCount > 0 ? ` (${activeCount})` : ""}</span>
+          <span>All Filters</span>
+          {activeCount > 0 && (
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+              {activeCount}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="start">
@@ -1110,6 +1168,56 @@ function AllFiltersPopover({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Work Days */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Work Days</p>
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_DAYS.map((day) => {
+                const allSelected = workDays.length === 0 || workDays.length === 7;
+                const selected = allSelected || workDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      const next = workDays.includes(day)
+                        ? workDays.filter((d) => d !== day)
+                        : [...workDays, day];
+                      onWorkDaysChange(next.length === 7 ? [] : next);
+                    }}
+                    className={`flex h-8 w-10 items-center justify-center rounded-md text-xs font-medium transition-colors ${
+                      selected
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => onWorkDaysChange([])}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                All days
+              </button>
+              <span className="text-xs text-muted-foreground">/</span>
+              <button
+                type="button"
+                onClick={() => onWorkDaysChange(["Mon", "Tue", "Wed", "Thu", "Fri"])}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Weekdays only
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Routes won&apos;t include pickups or deliveries on your off days
+            </p>
           </div>
         </div>
       </PopoverContent>
