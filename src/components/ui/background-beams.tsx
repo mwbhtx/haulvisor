@@ -54,8 +54,8 @@ function generateBeams(count: number, seed = 42): Beam[] {
       d: `M ${x0} ${y0} Q ${cx} ${cy} ${x1} ${y1}`,
       duration: 4 + rand() * 6,
       delay: rand() * -10,
-      width: 0.5 + rand() * 1.5,
-      opacity: 0.15 + rand() * 0.25,
+      width: 1 + rand() * 2,
+      opacity: 0.3 + rand() * 0.4,
     });
   }
 

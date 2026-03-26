@@ -10,6 +10,7 @@ import { ArrowRight, CalendarCheck, Bookmark, DollarSign, BarChart3 } from "luci
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import ShaderGradientButton from "@/components/shader-gradient-button";
+import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-with-collision";
 const ShaderGradientCanvas = dynamic(() => import("@shadergradient/react").then(m => ({ default: m.ShaderGradientCanvas })), { ssr: false });
 const ShaderGradient = dynamic(() => import("@shadergradient/react").then(m => ({ default: m.ShaderGradient })), { ssr: false });
 
@@ -115,19 +116,16 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Value prop ── */}
-      <div className="relative z-10 border-t border-white/[0.06] bg-[#0b090c]">
-        <div className="max-w-4xl mx-auto px-6 py-16 sm:py-20 text-center">
+      {/* ── Value prop + Feature sections (joined for beam effect) ── */}
+      <BackgroundBeamsWithCollision className="relative z-10 border-t border-white/[0.06] !bg-[#0b090c] !h-auto flex-col items-center">
+        <div className="relative max-w-4xl mx-auto px-6 py-16 sm:py-20 text-center w-full">
           <p className="text-xl sm:text-2xl md:text-[1.7rem] leading-relaxed text-[#d6d6d6]">
             Built for owner-operators who'd rather drive than stare at a load board. We analyze every route, calculate your real profit, and find the
-            fastest way home — so you don't have to.
+            fastest way home — so you don&apos;t have to.
           </p>
         </div>
-      </div>
 
-      {/* ── Feature sections ── */}
-      <section className="relative z-10 border-t border-white/[0.06] bg-[#0b090c]">
-        <div className="max-w-6xl mx-auto px-6 py-20 sm:py-28">
+        <div className="relative max-w-6xl mx-auto px-6 pb-20 sm:pb-28 w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {FEATURES.map((feature, i) => (
               <motion.div
@@ -149,7 +147,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </BackgroundBeamsWithCollision>
 
       {/* ── Bottom CTA ── */}
       <section className="relative z-10 border-t border-white/[0.06]">
