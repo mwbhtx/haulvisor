@@ -25,6 +25,7 @@ export interface Settings {
   per_diem_per_day: number | null;
   max_downtime_hours: number | null;
   work_days: string[] | null;
+  onboarding_completed: boolean;
   disabled_settings?: string[];
   last_login: string;
 }

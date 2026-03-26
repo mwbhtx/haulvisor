@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   type AuthUser,
   type NewPasswordChallenge,
@@ -66,6 +67,7 @@ async function fetchProfile(
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [companyIds, setCompanyIds] = useState<string[]>([]);
@@ -130,6 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [pendingChallenge]);
 
   const loginDemo = useCallback(async () => {
+    // Stash real user's session state, then clear for a fresh demo experience
+    try {
+      const keys = ["hv-route-filters", "hv-tour-dismissed"];
+      const stash: Record<string, string> = {};
+      for (const k of keys) {
+        const v = sessionStorage.getItem(k);
+        if (v != null) stash[k] = v;
+      }
+      if (Object.keys(stash).length > 0) {
+        sessionStorage.setItem("hv-pre-demo-stash", JSON.stringify(stash));
+      }
+      for (const k of keys) sessionStorage.removeItem(k);
+    } catch {}
+    queryClient.clear();
     await loginAsDemo();
     const currentUser = getCurrentUser();
     if (currentUser) {
@@ -141,9 +157,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     if (isDemoUser()) {
       logoutDemo();
+      // Restore real user's session state that was stashed before demo
+      try {
+        const raw = sessionStorage.getItem("hv-pre-demo-stash");
+        if (raw) {
+          const stash = JSON.parse(raw) as Record<string, string>;
+          for (const [k, v] of Object.entries(stash)) sessionStorage.setItem(k, v);
+          sessionStorage.removeItem("hv-pre-demo-stash");
+        }
+        // Clear demo's own session state
+        sessionStorage.removeItem("hv-route-filters");
+        sessionStorage.removeItem("hv-tour-dismissed");
+      } catch {}
     } else {
       authLogout();
     }
+    queryClient.clear();
     setUser(null);
     setCompanyIds([]);
     setActiveCompanyId(null);

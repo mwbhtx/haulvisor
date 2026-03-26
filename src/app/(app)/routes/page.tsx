@@ -12,6 +12,7 @@ import { useRouteSearch, useRoundTripSearch, type RouteSearchParams, type RoundT
 import { useActiveOrderCount } from "@/lib/hooks/use-orders";
 import { useAuth } from "@/components/auth-provider";
 import { useSettings } from "@/lib/hooks/use-settings";
+import { isDemoUser } from "@/lib/auth";
 import { groupRoutesByLocation } from "@/lib/group-by-location";
 import type { LocationGroup } from "@/lib/types";
 import type { DrawableRouteLeg } from "@/lib/map/draw-route";
@@ -65,20 +66,26 @@ export default function MapPage() {
   const hasActiveSearch = searchParams !== null || roundTripParams !== null;
   const hasHomeBase = !settingsLoading && !!settings?.home_base_lat;
 
-  // Start onboarding tour if no search is active and user hasn't dismissed it
+  // Start onboarding tour if no search is active and user hasn't completed it
   const { startOnborda, isOnbordaVisible } = useOnborda();
   const tourStarted = useRef(false);
+  // Reset tour guard when user changes (e.g. sign out → try demo again)
+  useEffect(() => {
+    tourStarted.current = false;
+  }, [activeCompanyId]);
   useEffect(() => {
     if (tourStarted.current || isOnbordaVisible) return;
     if (settingsLoading) return;
-    if (hasHomeBase) return;
+    if (hasHomeBase && !isDemoUser()) return;
     if (hasActiveSearch) return;
+    // Real users: check backend setting; demo users: check sessionStorage
+    if (settings?.onboarding_completed) return;
     const dismissed = sessionStorage.getItem("hv-tour-dismissed");
     if (dismissed) return;
     tourStarted.current = true;
     const timer = setTimeout(() => startOnborda("routes-intro"), 500);
     return () => clearTimeout(timer);
-  }, [settingsLoading, hasHomeBase, hasActiveSearch, startOnborda, isOnbordaVisible]);
+  }, [settingsLoading, hasHomeBase, hasActiveSearch, startOnborda, isOnbordaVisible, settings?.onboarding_completed, activeCompanyId]);
 
   // Track whether any search has fired (distinguishes "initial load" from "user cleared search")
   const hasSearchedOnce = useRef(false);
@@ -264,6 +271,7 @@ export default function MapPage() {
             onOriginChange={setOriginFilter}
             onDestinationChange={setDestFilter}
             onFilterPending={() => setFilterPending(true)}
+            isOnboarding={isOnbordaVisible}
             hasHome={hasHomeBase}
             resetKey={filterResetKey}
             initialTripType="round-trip"

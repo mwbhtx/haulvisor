@@ -4,6 +4,8 @@ import { useRef, useEffect } from "react";
 import type { CardComponentProps } from "onborda";
 import { useOnborda } from "onborda";
 import { X } from "lucide-react";
+import { useUpdateSettings } from "@/lib/hooks/use-settings";
+import { isDemoUser } from "@/lib/auth";
 
 export function OnbordaCard({
   step,
@@ -14,10 +16,17 @@ export function OnbordaCard({
   arrow,
 }: CardComponentProps) {
   const { closeOnborda } = useOnborda();
+  const updateSettings = useUpdateSettings();
   const cardRef = useRef<HTMLDivElement>(null);
 
   const dismiss = () => {
-    sessionStorage.setItem("hv-tour-dismissed", "1");
+    // Demo users: sessionStorage only (resets each demo session)
+    // Real users: persist to their user document so they never see it again
+    if (isDemoUser()) {
+      sessionStorage.setItem("hv-tour-dismissed", "1");
+    } else {
+      updateSettings.mutate({ onboarding_completed: true } as any);
+    }
     closeOnborda();
   };
 

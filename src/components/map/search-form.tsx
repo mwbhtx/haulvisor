@@ -448,6 +448,8 @@ interface SearchFiltersProps {
   onDestinationChange?: (dest: { lat: number; lng: number; city: string } | null) => void;
   /** Fires immediately when a filter changes, before the debounced search fires */
   onFilterPending?: () => void;
+  /** Whether onboarding tour is currently visible — hides origin nudge */
+  isOnboarding?: boolean;
   hasHome?: boolean;
   resetKey?: number;
   initialTripType?: "one-way" | "round-trip";
@@ -468,6 +470,7 @@ export function SearchFilters({
   onOriginChange,
   onDestinationChange,
   onFilterPending,
+  isOnboarding,
   hasHome,
   resetKey,
   initialTripType,
@@ -916,13 +919,21 @@ export function SearchFilters({
 
   /* ---- Desktop layout ---- */
   const [showNudge, setShowNudge] = useState(false);
+  const [nudgeVisible, setNudgeVisible] = useState(false);
   useEffect(() => {
-    if (!origin && defaultsLoaded && searchEnabled.current && !originPopoverOpen) {
-      setShowNudge(true);
+    const shouldShow = !origin && defaultsLoaded && searchEnabled.current && !originPopoverOpen && !isOnboarding;
+    if (shouldShow) {
+      const timer = setTimeout(() => {
+        setShowNudge(true);
+        // Trigger fade-in on next frame
+        requestAnimationFrame(() => setNudgeVisible(true));
+      }, 2000);
+      return () => clearTimeout(timer);
     } else {
       setShowNudge(false);
+      setNudgeVisible(false);
     }
-  }, [origin, defaultsLoaded, originPopoverOpen]);
+  }, [origin, defaultsLoaded, originPopoverOpen, isOnboarding]);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -930,7 +941,7 @@ export function SearchFilters({
       <div className="relative">
         {originPill}
         {showNudge && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20">
+          <div className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20 transition-opacity duration-500 ${nudgeVisible ? "opacity-100" : "opacity-0"}`}>
             <div className="flex justify-center mb-1">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black border-2 border-primary animate-bounce">
                 <ChevronUpIcon className="h-4 w-4 text-primary" strokeWidth={3} />
