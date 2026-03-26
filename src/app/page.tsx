@@ -166,12 +166,6 @@ export default function HomePage() {
               Try Demo
               <ArrowRight className="h-4 w-4" />
             </button>
-            <Link
-              href="/login"
-              className="h-12 px-8 rounded-lg border border-white/[0.15] text-base font-medium hover:bg-white/[0.06] transition-colors inline-flex items-center"
-            >
-              Sign in
-            </Link>
           </div>
         </div>
       </section>
