@@ -736,6 +736,7 @@ export function SearchFilters({
 
   // Shared filter elements
   const tripTypePill = (
+    <div id="onborda-trip-mode">
     <FilterPill label={compactBar || mobile ? "" : "Trip Mode"} value={isRoundTrip ? (compactBar || mobile ? "RT" : "Round Trip") : (compactBar || mobile ? "OW" : "One Way")}>
       {(close) => (
         <div className="space-y-3 p-1">
@@ -762,34 +763,39 @@ export function SearchFilters({
         </div>
       )}
     </FilterPill>
+    </div>
   );
 
   const originPill = (
-    <LocationPill
-      label={isRoundTrip ? (compactBar || mobile ? "O/D" : "Origin / Destination") : (compactBar || mobile ? "O" : "Origin")}
-      title={isRoundTrip ? "Origin / Destination" : "Origin"}
-      value={origin}
-      onSelect={setOrigin}
-      onUseHome={hasHomeLocation ? () => setOrigin(homePlace) : undefined}
-      homeCityLabel={hasHomeLocation ? settings!.home_base_city! : undefined}
-      onUseMyLocation={handleUseMyLocation}
-      pulse={false}
-    />
+    <div id="onborda-origin">
+      <LocationPill
+        label={compactBar || mobile ? "O" : "Origin"}
+        title="Origin"
+        value={origin}
+        onSelect={setOrigin}
+        onUseHome={hasHomeLocation ? () => setOrigin(homePlace) : undefined}
+        homeCityLabel={hasHomeLocation ? settings!.home_base_city! : undefined}
+        onUseMyLocation={handleUseMyLocation}
+        pulse={false}
+      />
+    </div>
   );
 
   const destPill = !isRoundTrip ? (
-    <LocationPill
-      label={compactBar || mobile ? "D" : "Destination"}
-      title="Destination"
-      value={destination}
-      onSelect={setDestination}
-      onUseHome={hasHomeLocation ? () => setDestination(homePlace) : undefined}
-      homeCityLabel={hasHomeLocation ? settings!.home_base_city! : undefined}
-    />
+    <div id="onborda-destination">
+      <LocationPill
+        label={compactBar || mobile ? "D" : "Destination"}
+        title="Destination"
+        value={destination}
+        onSelect={setDestination}
+        onUseHome={hasHomeLocation ? () => setDestination(homePlace) : undefined}
+        homeCityLabel={hasHomeLocation ? settings!.home_base_city! : undefined}
+      />
+    </div>
   ) : null;
 
   const legsPill = (
-    <div className="flex h-9 items-center rounded-full border bg-card/95 backdrop-blur shadow-sm overflow-hidden mobile-filter-pill whitespace-nowrap">
+    <div id="onborda-legs" className="flex h-9 items-center rounded-full border bg-card/95 backdrop-blur shadow-sm overflow-hidden mobile-filter-pill whitespace-nowrap">
       <span className="pl-4 pr-2 text-sm text-muted-foreground font-medium">Legs:</span>
       {(isRoundTrip ? [2, 3] : [1, 2, 3]).map((n) => (
         <button
@@ -891,10 +897,10 @@ export function SearchFilters({
       {originPill}
       {destPill}
       {legsPill}
-      {isRoundTrip && <HomeByPill value={homeBy} onChange={setHomeBy} />}
-      <MaxDowntimePill value={maxDowntime} onChange={setMaxDowntime} />
-      <DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} />
-      <AllFiltersPopover risk={risk} onRiskChange={setRisk} />
+      {isRoundTrip && <div id="onborda-home-by"><HomeByPill value={homeBy} onChange={setHomeBy} /></div>}
+      <div id="onborda-downtime"><MaxDowntimePill value={maxDowntime} onChange={setMaxDowntime} /></div>
+      <div id="onborda-deadhead"><DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} /></div>
+      <div id="onborda-all-filters"><AllFiltersPopover risk={risk} onRiskChange={setRisk} /></div>
       {clearButton}
     </div>
   );

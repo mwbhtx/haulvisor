@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useOnborda } from "onborda";
 import { SlidersHorizontal, ArrowUpDown, XIcon, ChevronUpIcon } from "lucide-react";
 import { RouteMap } from "@/components/map/route-map";
 import { SearchFilters } from "@/components/map/search-form";
@@ -62,6 +63,21 @@ export default function MapPage() {
 
   const hasActiveSearch = searchParams !== null || roundTripParams !== null;
   const hasHomeBase = !settingsLoading && !!settings?.home_base_lat;
+
+  // Start onboarding tour if no search is active and user hasn't dismissed it
+  const { startOnborda, isOnbordaVisible } = useOnborda();
+  const tourStarted = useRef(false);
+  useEffect(() => {
+    if (tourStarted.current || isOnbordaVisible) return;
+    if (settingsLoading) return;
+    if (hasHomeBase) return;
+    if (hasActiveSearch) return;
+    const dismissed = sessionStorage.getItem("hv-tour-dismissed");
+    if (dismissed) return;
+    tourStarted.current = true;
+    const timer = setTimeout(() => startOnborda("routes-intro"), 500);
+    return () => clearTimeout(timer);
+  }, [settingsLoading, hasHomeBase, hasActiveSearch, startOnborda, isOnbordaVisible]);
 
   // Track whether any search has fired (distinguishes "initial load" from "user cleared search")
   const hasSearchedOnce = useRef(false);
