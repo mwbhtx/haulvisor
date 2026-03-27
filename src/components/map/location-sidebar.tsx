@@ -10,7 +10,7 @@ import { useAuth } from "@/components/auth-provider";
 import { fetchApi } from "@/lib/api";
 import type { RouteChain, RoundTripChain, RoundTripLeg, LocationGroup } from "@/lib/types";
 import { RouteInspector } from "@/components/map/route-inspector";
-import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
+import { DEFAULT_COST_PER_MILE, calcAvgLoadedRpm } from "@mwbhtx/haulvisor-core";
 import { LEG_COLORS } from "@/lib/route-colors";
 import { rateColor, netRateColor, routeProfitColor } from "@/lib/rate-color";
 
@@ -486,15 +486,7 @@ function RoundTripChainCard({
   const [showInspector, setShowInspector] = useState(false);
   const profit = hasSpeculative ? chain.estimated_total_profit : chain.firm_profit;
 
-  const avgLoadedRpm = (() => {
-    const loadedLegs = firmLegs.filter(l => l.pay > 0 && l.miles > 0);
-    if (loadedLegs.length === 0) return null;
-    const { pay, miles } = loadedLegs.reduce(
-      (acc, l) => ({ pay: acc.pay + l.pay, miles: acc.miles + l.miles }),
-      { pay: 0, miles: 0 },
-    );
-    return pay / miles;
-  })();
+  const avgLoadedRpm = calcAvgLoadedRpm(firmLegs);
 
   useEffect(() => {
     if (!isSelected) setShowInspector(false);
