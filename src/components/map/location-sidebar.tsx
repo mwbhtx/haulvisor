@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { XIcon, ChevronDownIcon, ChevronUpIcon, FlameIcon, BookmarkIcon, ClipboardListIcon } from "lucide-react";
+import { XIcon, ChevronDownIcon, ChevronUpIcon, ChevronRightIcon, ChevronLeftIcon, FlameIcon, BookmarkIcon, ClipboardListIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/components/auth-provider";
 import { fetchApi } from "@/lib/api";
 import type { RouteChain, RoundTripChain, RoundTripLeg, LocationGroup } from "@/lib/types";
+import { RouteInspector } from "@/components/map/route-inspector";
 import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
 import { LEG_COLORS } from "@/lib/route-colors";
 import { rateColor, netRateColor, routeProfitColor } from "@/lib/rate-color";
@@ -194,18 +196,18 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
     : sortedRoutes.length;
 
   return (
-    <div className="flex h-full w-full bg-black/80 border border-white/10 rounded-2xl flex-col overflow-hidden">
+    <div className="flex h-full w-full bg-[#19191a] border border-white/10 rounded-2xl flex-col overflow-hidden relative">
 
       {/* Sort bar + watchlist toggle */}
       {hasResults && !isLoading && (
         <div className="flex items-center gap-1.5 px-3 py-2 bg-black/80 rounded-xl mx-2 mt-2">
-          <span className="text-xs text-muted-foreground mr-1">Sort</span>
+          <span className="text-sm text-muted-foreground mr-1">Sort</span>
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.key}
               type="button"
               onClick={() => setSortBy(opt.key)}
-              className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
+              className={`rounded-full px-3 py-1 text-sm transition-colors ${
                 sortBy === opt.key
                   ? "bg-primary text-primary-foreground"
                   : "border border-input hover:bg-accent hover:text-accent-foreground"
@@ -218,9 +220,9 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
             <button
               type="button"
               onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
-              className={`rounded-full px-2.5 py-0.5 text-xs transition-colors flex items-center gap-1 ${
+              className={`rounded-full px-3 py-1 text-sm transition-colors flex items-center gap-1 ${
                 showWatchlistOnly
-                  ? "bg-amber-500/15 border border-amber-500/30 text-amber-500"
+                  ? "bg-primary/15 border border-primary/30 text-primary"
                   : "border border-input hover:bg-accent hover:text-accent-foreground"
               }`}
             >
@@ -228,7 +230,7 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
               {watchlist.size}
             </button>
           )}
-          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+          <span className="ml-auto text-sm text-muted-foreground tabular-nums">
             {itemCount} route{itemCount !== 1 ? "s" : ""}
           </span>
         </div>
@@ -481,126 +483,138 @@ function RoundTripChainCard({
     : "";
 
   const [showCosts, setShowCosts] = useState(false);
+  const [showInspector, setShowInspector] = useState(false);
   const profit = hasSpeculative ? chain.estimated_total_profit : chain.firm_profit;
+
+  const avgLoadedRpm = (() => {
+    const loadedLegs = firmLegs.filter(l => l.pay > 0 && l.miles > 0);
+    if (loadedLegs.length === 0) return null;
+    const { pay, miles } = loadedLegs.reduce(
+      (acc, l) => ({ pay: acc.pay + l.pay, miles: acc.miles + l.miles }),
+      { pay: 0, miles: 0 },
+    );
+    return pay / miles;
+  })();
+
+  useEffect(() => {
+    if (!isSelected) setShowInspector(false);
+  }, [isSelected]);
 
   return (
     <div
       data-route-idx={routeIdx}
-      onClick={onClick}
-      className={`rounded-xl bg-black/80 cursor-pointer transition-colors ${
-        isSelected ? "ring-1 ring-cyan-500" : "hover:bg-black/90"
+      className={`relative flex rounded-xl overflow-hidden border ${
+        isSelected ? "border-white/[0.12] shadow-[inset_2px_0_0_rgba(255,255,255,0.18)]" : "border-white/[0.10]"
       }`}
     >
-      <div className="p-3">
-        {/* Best match badge */}
-        {rank === 1 && (
-          <div className="mb-3">
-            <span className="shrink-0 inline-block rounded-full bg-green-500/15 border border-green-500/30 px-2.5 py-0.5 text-xs font-medium text-green-500">
-              Best match
-            </span>
-          </div>
-        )}
-
+      {/* Route details */}
+      <div
+        onClick={onClick}
+        className={`flex-1 min-w-0 cursor-pointer transition-colors ${
+          isSelected ? "bg-[#111111]" : "rounded-xl bg-[#111111] hover:bg-[#161616]"
+        }`}
+      >
         {/* Key metrics + bookmark */}
-        <div className="flex justify-around text-center items-center">
+        <div className="flex justify-around text-center items-start px-4 py-3 border-b border-white/[0.05]">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Profit</p>
-            <p className={`text-lg font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
+            <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>Profit</p>
+            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
               {formatCurrency(profit)}
             </p>
+            <p className="text-xs tabular-nums mt-0.5" style={{ color: "rgba(205,205,205,0.4)" }}>{formatCurrency(chain.total_pay)} gross</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">$/Day</p>
-            <p className={`text-lg font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
+            <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>$/Day</p>
+            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
               {formatCurrency(chain.daily_net_profit)}
             </p>
+            <p className="text-xs tabular-nums mt-0.5" style={{ color: "rgba(205,205,205,0.4)" }}>{chain.estimated_days.toFixed(1)} days est.</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">DH %</p>
-            <p className={`text-lg font-bold tabular-nums ${chain.deadhead_pct > 30 ? "text-yellow-500" : ""}`}>
-              {chain.deadhead_pct.toFixed(0)}%
+            <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>Net/mi</p>
+            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
+              {formatRpm(chain.effective_rpm)}
             </p>
+            {avgLoadedRpm !== null && (
+              <p className="text-xs tabular-nums mt-0.5" style={{ color: "rgba(205,205,205,0.4)" }}>${avgLoadedRpm.toFixed(2)}/mi loaded</p>
+            )}
           </div>
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Gross</p>
-            <p className="text-lg font-bold tabular-nums">{formatCurrency(chain.total_pay)}</p>
+            <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>Miles</p>
+            <p className="text-xl font-bold tabular-nums">{chain.total_miles.toLocaleString()}</p>
+            <p className="text-xs tabular-nums mt-0.5" style={{ color: chain.deadhead_pct > 30 ? "rgba(245,158,11,0.7)" : "rgba(205,205,205,0.4)" }}>{chain.deadhead_pct.toFixed(0)}% DH</p>
           </div>
           {onToggleWatchlist && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggleWatchlist(); }}
-              className="shrink-0 p-1 rounded transition-colors hover:bg-muted"
+              className="shrink-0 p-1 rounded transition-colors hover:bg-white/10"
             >
-              <BookmarkIcon className={`h-6 w-6 ${isWatchlisted ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
+              <BookmarkIcon className={`h-6 w-6 ${isWatchlisted ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />
             </button>
           )}
         </div>
 
-        {/* Secondary info pills */}
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          <span className={`rounded-full border px-3 py-1 text-sm ${routeProfitColor(chain.daily_net_profit)}`}>
-            {formatRpm(chain.effective_rpm)} net
-          </span>
-          <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">
-            {chain.estimated_days} day{chain.estimated_days !== 1 ? "s" : ""} · {chain.total_miles.toLocaleString()} mi
-          </span>
-          {dateRange && (
-            <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">
-              {dateRange}
-            </span>
-          )}
-        </div>
-      </div>
+        {/* Date range row */}
+        {dateRange && (
+          <div className="flex items-center justify-end px-4 py-2">
+            <span className="text-sm" style={{ color: "rgba(205,205,205,0.5)" }}>{dateRange}</span>
+          </div>
+        )}
 
-      {/* Route timeline (expanded) */}
-      {isSelected && (() => {
-        const costPerDhMile = chain.total_deadhead_miles > 0
-          ? chain.estimated_deadhead_cost / chain.total_deadhead_miles
-          : 0;
-        const firstLeg = chain.legs[0];
-        const lastLeg = chain.legs[chain.legs.length - 1];
-        const startDh = firstLeg?.deadhead_miles ?? 0;
-        // Return deadhead = total - start - sum of between-leg deadheads
-        const betweenDh = chain.legs.slice(1).reduce((sum, l) => sum + l.deadhead_miles, 0);
-        const returnDh = Math.max(0, chain.total_deadhead_miles - startDh - betweenDh);
-        const origin = originCity || "Origin";
-        const returnCity = destCity || origin;
+        {/* Route detail (expanded) */}
+        {isSelected && (() => {
+          const costPerDhMile = chain.total_deadhead_miles > 0
+            ? chain.estimated_deadhead_cost / chain.total_deadhead_miles
+            : 0;
+          const firstLeg = chain.legs[0];
+          const lastLeg = chain.legs[chain.legs.length - 1];
+          const startDh = firstLeg?.deadhead_miles ?? 0;
+          const betweenDh = chain.legs.slice(1).reduce((sum, l) => sum + l.deadhead_miles, 0);
+          const returnDh = Math.max(0, chain.total_deadhead_miles - startDh - betweenDh);
+          const origin = originCity || "Origin";
+          const returnCity = destCity || origin;
 
-        return (
-          <div className="border-t p-3 space-y-3">
-            {/* Cost breakdown */}
-            <div className="text-sm space-y-2">
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-                onClick={(e) => { e.stopPropagation(); setShowCosts(!showCosts); }}
-              >
-                <span>Cost breakdown</span>
-                {showCosts ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
-              </button>
-              {showCosts && (
-                <div className="pl-4 inline-grid grid-cols-[8rem_auto] gap-x-4 gap-y-1 text-muted-foreground">
-                  <span>Fuel</span><span className="text-right">{formatCurrency(chain.cost_breakdown.fuel)}</span>
-                  <span>Maintenance</span><span className="text-right">{formatCurrency(chain.cost_breakdown.maintenance)}</span>
-                  <span>Tires</span><span className="text-right">{formatCurrency(chain.cost_breakdown.tires)}</span>
-                  <span>Daily costs</span><span className="text-right">{formatCurrency(chain.cost_breakdown.daily_costs)}</span>
-                  <span className="font-medium text-foreground border-t border-border pt-1">Total</span>
-                  <span className="text-right font-medium text-foreground border-t border-border pt-1">{formatCurrency(chain.cost_breakdown.total)}</span>
-                </div>
-              )}
-            </div>
+          return (
+            <div className="border-t border-white/[0.05]">
+              {/* Cost breakdown toggle */}
+              <div className="border-b border-white/[0.05]">
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 text-sm transition-colors w-full px-4 py-2.5" style={{ color: "rgba(205,205,205,0.5)" }}
+                  onClick={(e) => { e.stopPropagation(); setShowCosts(!showCosts); }}
+                >
+                  <span>Cost breakdown</span>
+                  {showCosts ? <ChevronUpIcon className="h-3.5 w-3.5" /> : <ChevronDownIcon className="h-3.5 w-3.5" />}
+                </button>
+                {showCosts && (
+                  <div className="px-4 pb-3 grid grid-cols-[1fr_auto] gap-x-6 gap-y-1.5 text-sm" style={{ color: "#cdcdcd" }}>
+                    <span>Fuel</span><span className="text-right tabular-nums">{formatCurrency(chain.cost_breakdown.fuel)}</span>
+                    <span>Maintenance</span><span className="text-right tabular-nums">{formatCurrency(chain.cost_breakdown.maintenance)}</span>
+                    <span>Tires</span><span className="text-right tabular-nums">{formatCurrency(chain.cost_breakdown.tires)}</span>
+                    <span>Daily costs</span><span className="text-right tabular-nums">{formatCurrency(chain.cost_breakdown.daily_costs)}</span>
+                    <span className="font-medium border-t border-white/[0.05] pt-1.5">Total</span>
+                    <span className="text-right tabular-nums font-medium border-t border-white/[0.05] pt-1.5">{formatCurrency(chain.cost_breakdown.total)}</span>
+                  </div>
+                )}
+              </div>
 
-            <p className="text-xs font-medium text-muted-foreground">Route</p>
-            <div className="relative ml-[7px]">
-              <div className="absolute left-0 top-[6px] bottom-[6px] w-px bg-muted-foreground/30" />
+              {/* Segments header */}
+              <div className="px-4 pt-3 pb-1.5 border-b border-white/[0.05]">
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(205,205,205,0.3)" }}>Segments</p>
+              </div>
 
-              {/* Start deadhead: origin → first pickup */}
-              {startDh > 0 && (
-                <div className="flex items-center gap-3 py-2 relative">
-                  <div className="relative z-10 -ml-[3px] h-2 w-2 rounded-full border-2 border-muted-foreground bg-card shrink-0" />
-                  <div className="flex-1 flex items-center justify-between text-base text-muted-foreground">
-                    <span>{origin} → {firstLeg.origin_city}</span>
-                    <span className="text-yellow-500">−{formatCurrency(startDh * costPerDhMile)} DH</span>
+              {/* Start deadhead */}
+              {startDh > 0 && firstLeg.origin_city !== origin && (
+                <div className="flex items-stretch gap-3 pl-4 pr-4 border-b border-white/[0.05] bg-[#161616]">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-px flex-1 bg-white/[0.07]" />
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-white/20 bg-[#161616] shrink-0" />
+                    <div className="w-px flex-1 bg-white/[0.07]" />
+                  </div>
+                  <div className="flex items-center flex-1 gap-3 py-3">
+                    <span className="flex-1 text-base" style={{ color: "#cdcdcd" }}>{origin} → {firstLeg.origin_city}</span>
+                    <span className="text-base tabular-nums" style={{ color: "#ff6969" }}>−{formatCurrency(startDh * costPerDhMile)} DH</span>
                   </div>
                 </div>
               )}
@@ -608,84 +622,89 @@ function RoundTripChainCard({
               {chain.legs.map((leg: RoundTripLeg, legIdx: number) => {
                 const color = LEG_COLORS[legIdx % LEG_COLORS.length];
                 const showBetweenDh = leg.deadhead_miles > 0 && legIdx > 0;
-
                 return (
                   <div key={leg.leg_number}>
-                    {/* Between-leg deadhead */}
                     {showBetweenDh && (
-                      <div className="flex items-center gap-3 py-2 relative">
-                        <div className="relative z-10 -ml-[3px] h-2 w-2 rounded-full border-2 border-muted-foreground bg-card shrink-0" />
-                        <div className="flex-1 flex items-center justify-between text-base text-muted-foreground">
-                          <span>{chain.legs[legIdx - 1].destination_city} → {leg.origin_city}</span>
-                          <span className="text-yellow-500">−{formatCurrency(leg.deadhead_miles * costPerDhMile)} DH</span>
+                      <div className="flex items-stretch gap-3 pl-4 pr-4 border-b border-white/[0.05] bg-[#161616]">
+                        <div className="flex flex-col items-center shrink-0">
+                          <div className="w-px flex-1 bg-white/[0.07]" />
+                          <div className="h-3.5 w-3.5 rounded-full border-2 border-white/20 bg-[#161616] shrink-0" />
+                          <div className="w-px flex-1 bg-white/[0.07]" />
+                        </div>
+                        <div className="flex items-center flex-1 gap-3 py-3">
+                          <span className="flex-1 text-base" style={{ color: "#cdcdcd" }}>
+                            {chain.legs[legIdx - 1].destination_city} → {leg.origin_city}
+                          </span>
+                          <span className="text-base tabular-nums" style={{ color: "#ff6969" }}>
+                            −{formatCurrency(leg.deadhead_miles * costPerDhMile)} DH
+                          </span>
                         </div>
                       </div>
                     )}
-
-                    {/* Leg */}
                     <div
-                      className="flex items-start gap-3 py-2 relative"
+                      className="flex items-stretch gap-3 pl-4 pr-4 border-b border-white/[0.05]"
                       onMouseEnter={() => onHoverLeg?.(legIdx)}
                       onMouseLeave={() => onHoverLeg?.(null)}
                     >
-                      <div
-                        className="relative z-10 -ml-[4px] mt-1 h-3 w-3 rounded-full shrink-0"
-                        style={{ backgroundColor: color }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-base flex items-center gap-1">
+                      <div className="flex flex-col items-center shrink-0">
+                        <div className="w-px flex-1 bg-white/[0.07]" />
+                        <div className="h-3.5 w-3.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        <div className="w-px flex-1 bg-white/[0.07]" />
+                      </div>
+                      <div className="flex-1 py-3">
+                        <div className="flex items-center gap-3">
+                          <p className="flex-1 text-base font-semibold flex items-center gap-1.5 min-w-0" style={{ color }}>
                             {leg.order_id && orderUrlTemplate ? (
                               <a
                                 href={orderUrlTemplate.replace('{{ORDER_ID}}', leg.order_id)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:underline hover:text-primary transition-colors"
+                                className="hover:underline hover:text-primary transition-colors truncate"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {leg.origin_city} → {leg.destination_city}
                               </a>
                             ) : (
-                              <>{leg.origin_city} → {leg.destination_city}</>
+                              <span className="truncate">{leg.origin_city} → {leg.destination_city}</span>
                             )}
-                            {leg.lane_rank != null && <FlameIcon className="h-5 w-5 text-orange-400" />}
+                            {leg.lane_rank != null && <FlameIcon className="h-4 w-4 text-primary shrink-0" />}
                             {leg.order_id && leg.type === "firm" && onShowComments && (
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); onShowComments(leg.order_id!); }}
-                                className="text-muted-foreground hover:text-primary transition-colors"
+                                className="text-muted-foreground/40 hover:text-primary transition-colors shrink-0"
                                 title="View comments"
                               >
                                 <ClipboardListIcon className="h-4 w-4" />
                               </button>
                             )}
                           </p>
-                          <span className={`shrink-0 text-base font-semibold ${
-                            leg.type === "speculative" ? "text-muted-foreground" : "text-green-500"
+                          <span className={`shrink-0 text-base font-semibold tabular-nums ${
+                            leg.type === "speculative" ? "text-[#cdcdcd]" : "text-green-400"
                           }`}>
                             {leg.type === "speculative" ? `~${formatCurrency(leg.pay)}` : formatCurrency(leg.pay)}
                           </span>
                         </div>
                         {leg.type === "firm" ? (
-                          <div className="text-base text-muted-foreground mt-0.5 space-y-0.5">
+                          <div className="text-sm mt-1 space-y-0.5" style={{ color: "#cdcdcd" }}>
                             <p>
                               {[leg.weight != null ? `${leg.weight.toLocaleString()} lbs` : null, leg.miles != null ? `${leg.miles.toLocaleString()} mi` : null].filter(Boolean).join(" · ")}
                               {leg.miles > 0 && <>{" · "}<span className={rateColor(leg.pay / leg.miles, costPerMile)}>${(leg.pay / leg.miles).toFixed(2)}/mi</span></>}
                             </p>
                             {(leg.pickup_date_early || leg.delivery_date_early) && (
-                              <div className="text-sm">
+                              <div>
                                 {leg.pickup_date_early && <p>Pickup: {formatDateRange(leg.pickup_date_early, leg.pickup_date_late)}</p>}
                                 {leg.delivery_date_early && <p>Delivery: {formatDateRange(leg.delivery_date_early, leg.delivery_date_late)}</p>}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <p className="text-base text-muted-foreground mt-0.5">
+                          <p className="text-sm mt-1" style={{ color: "#cdcdcd" }}>
                             {[`${leg.miles.toLocaleString()} mi`, leg.lane_confidence ? `${leg.lane_confidence.loads_per_week.toFixed(1)} loads/wk` : null].filter(Boolean).join(" · ")}
                           </p>
                         )}
                         {leg.type === "speculative" && leg.lane_confidence && (
-                          <div className="mt-1">
+                          <div className="mt-1.5">
                             <ConfidenceBadge score={leg.lane_confidence.confidence_score} />
                           </div>
                         )}
@@ -695,20 +714,65 @@ function RoundTripChainCard({
                 );
               })}
 
-              {/* Return deadhead: last dropoff → origin (round-trip) or → destination (one-way) */}
-              {returnDh > 0 && (
-                <div className="flex items-center gap-3 py-2 relative">
-                  <div className="relative z-10 -ml-[3px] h-2 w-2 rounded-full border-2 border-muted-foreground bg-card shrink-0" />
-                  <div className="flex-1 flex items-center justify-between text-base text-muted-foreground">
-                    <span>{lastLeg.destination_city} → {returnCity}</span>
-                    <span className="text-yellow-500">−{formatCurrency(returnDh * costPerDhMile)} DH</span>
+              {returnDh > 0 && lastLeg.destination_city !== returnCity && (
+                <div className="flex items-stretch gap-3 pl-4 pr-4 border-b border-white/[0.05] bg-[#161616]">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-px flex-1 bg-white/[0.07]" />
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-white/20 bg-[#161616] shrink-0" />
+                    <div className="w-px flex-1 bg-white/[0.07]" />
+                  </div>
+                  <div className="flex items-center flex-1 gap-3 py-3">
+                    <span className="flex-1 text-base" style={{ color: "#cdcdcd" }}>{lastLeg.destination_city} → {returnCity}</span>
+                    <span className="text-base tabular-nums" style={{ color: "#ff6969" }}>−{formatCurrency(returnDh * costPerDhMile)} DH</span>
                   </div>
                 </div>
               )}
             </div>
+          );
+        })()}
+      </div>
+
+      {/* Right-edge handle — visible when selected, drawer is closed */}
+      {isSelected && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setShowInspector(true); }}
+          className="flex items-center justify-center w-6 shrink-0 rounded-r-xl bg-[#111111] hover:bg-[#1a1a1a] border-l border-white/[0.05] transition-colors"
+          title="View segment breakdown"
+        >
+          <ChevronLeftIcon className="h-4 w-4 text-muted-foreground/30" />
+        </button>
+      )}
+
+      {/* Inspector drawer — slides in from right as an overlay */}
+      {isSelected && (
+        <div
+          className="absolute inset-0 flex"
+          style={{
+            transform: showInspector ? "translateX(0)" : "translateX(100%)",
+            transition: "transform 320ms cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          {/* Left-edge close handle */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setShowInspector(false); }}
+            className="flex items-center justify-center w-6 shrink-0 bg-[#111111] hover:bg-[#1a1a1a] border-r border-white/[0.05] transition-colors"
+            title="Back to route"
+          >
+            <ChevronRightIcon className="h-4 w-4 text-muted-foreground/50" />
+          </button>
+          {/* Inspector content */}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <RouteInspector
+              chain={chain}
+              originCity={originCity || "Origin"}
+              returnCity={destCity || originCity || "Origin"}
+              onClose={() => setShowInspector(false)}
+            />
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }

@@ -358,7 +358,7 @@ function FullDetailCard({
               onClick={(e) => { e.stopPropagation(); onToggleWatchlist(); }}
               className="shrink-0 p-1.5 rounded transition-colors hover:bg-muted"
             >
-              <BookmarkIcon className={`h-6 w-6 ${isWatchlisted ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
+              <BookmarkIcon className={`h-6 w-6 ${isWatchlisted ? "fill-primary text-primary" : "text-muted-foreground"}`} />
             </button>
           )}
         </div>

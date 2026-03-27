@@ -41,7 +41,7 @@ export function netRateColor(netPerMile: number): string {
  *   Red:    < $150/day  — not worth the time
  */
 export function routeProfitColor(dailyNetProfit: number): string {
-  if (dailyNetProfit >= 300) return "text-green-500";
+  if (dailyNetProfit >= 300) return "text-green-400";
   if (dailyNetProfit >= 150) return "text-yellow-500";
   return "text-red-500";
 }

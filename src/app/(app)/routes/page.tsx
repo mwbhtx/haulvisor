@@ -285,7 +285,7 @@ export default function MapPage() {
           />
         </div>
 
-        {hasActiveSearch && <div className="w-[40%] min-w-[320px] max-w-[672px] shrink-0 flex-1 min-h-0 pointer-events-auto">
+        {hasActiveSearch && <div className="w-[48%] min-w-[380px] max-w-[780px] shrink-0 flex-1 min-h-0 pointer-events-auto">
           <LocationSidebar
             location={displayLocation}
             selectedIndex={selectedItemIndex}
