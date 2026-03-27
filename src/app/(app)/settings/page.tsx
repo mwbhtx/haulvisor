@@ -62,7 +62,7 @@ export default function SettingsPage() {
   const [avgDrivingHours, setAvgDrivingHours] = useState("");
   const [maxWeight, setMaxWeight] = useState("");
   const [maxAssigned, setMaxAssigned] = useState("");
-  const [maxDowntime, setMaxDowntime] = useState("");
+  const [maxIdle, setMaxIdle] = useState("");
   const [trailerLabels, setTrailerLabels] = useState<string[]>([]);
   const [hazmatCertified, setHazmatCertified] = useState(false);
   const [twicCard, setTwicCard] = useState(false);
@@ -92,7 +92,7 @@ export default function SettingsPage() {
     setAvgDrivingHours(settings.avg_driving_hours_per_day != null ? String(settings.avg_driving_hours_per_day) : "");
     setMaxWeight(settings.max_weight != null ? String(settings.max_weight) : "");
     setMaxAssigned(settings.max_assigned_orders != null ? String(settings.max_assigned_orders) : "");
-    setMaxDowntime(settings.max_downtime_hours != null ? String(settings.max_downtime_hours) : "");
+    setMaxIdle(settings.max_idle_hours != null ? String(settings.max_idle_hours) : "");
     setTrailerLabels(codesToLabels(settings.trailer_types ?? []));
     setHazmatCertified(settings.hazmat_certified ?? false);
     setTwicCard(settings.twic_card ?? false);
@@ -450,12 +450,12 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          {/* Max Downtime Between Legs */}
+          {/* Max Idle Between Legs */}
           <div className="space-y-3">
-            <label className="text-sm font-medium mb-2 block">Max Downtime Between Legs</label>
+            <label className="text-sm font-medium mb-2 block">Max Idle Between Legs</label>
             <select
-              value={maxDowntime}
-              onChange={(e) => handleNumberChange("max_downtime_hours", e.target.value, setMaxDowntime)}
+              value={maxIdle}
+              onChange={(e) => handleNumberChange("max_idle_hours", e.target.value, setMaxIdle)}
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">Not set (use filter bar)</option>

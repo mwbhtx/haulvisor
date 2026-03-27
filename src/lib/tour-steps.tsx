@@ -70,14 +70,14 @@ export const tourSteps: Tour[] = [
       },
       {
         icon: <>&#9200;</>,
-        title: "Max Downtime",
+        title: "Max Idle",
         content: (
           <p>
             Limit <span className={hl}>idle time</span> between loads. Lower values keep you moving but may
             reduce available routes.
           </p>
         ),
-        selector: "#onborda-downtime",
+        selector: "#onborda-idle",
         side: "bottom",
         showControls: true,
         pointerPadding: 4,

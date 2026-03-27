@@ -148,9 +148,9 @@ export function PlaceAutocomplete({
   );
 }
 
-/* ---- Max Downtime Pill ---- */
+/* ---- Max Idle Pill ---- */
 
-const DOWNTIME_OPTIONS = [
+const IDLE_OPTIONS = [
   { value: 24, label: "1 Day" },
   { value: 48, label: "2 Days" },
   { value: 72, label: "3 Days" },
@@ -159,9 +159,9 @@ const DOWNTIME_OPTIONS = [
   { value: 0, label: "Any" },
 ] as const;
 
-function MaxDowntimePill({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function MaxIdlePill({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [open, setOpen] = useState(false);
-  const currentLabel = DOWNTIME_OPTIONS.find((o) => o.value === value)?.label ?? "Any";
+  const currentLabel = IDLE_OPTIONS.find((o) => o.value === value)?.label ?? "Any";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -170,7 +170,7 @@ function MaxDowntimePill({ value, onChange }: { value: number; onChange: (v: num
           type="button"
           className="flex h-9 items-center gap-1.5 rounded-full border bg-card/95 backdrop-blur px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent mobile-filter-pill whitespace-nowrap"
         >
-          <span className="text-muted-foreground">Max Downtime:</span>
+          <span className="text-muted-foreground">Max Idle:</span>
           <span className="flex items-center gap-1.5">
             <span>{currentLabel}</span>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -179,9 +179,9 @@ function MaxDowntimePill({ value, onChange }: { value: number; onChange: (v: num
       </PopoverTrigger>
       <PopoverContent className="w-auto" align="start">
         <div className="space-y-2 p-1">
-          <p className="text-sm font-medium">Max Downtime Between Legs</p>
+          <p className="text-sm font-medium">Max Idle Between Legs</p>
           <div className="flex flex-wrap gap-2">
-            {DOWNTIME_OPTIONS.map((opt) => (
+            {IDLE_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
@@ -502,7 +502,7 @@ export function SearchFilters({
   // Restore persisted filter state from sessionStorage
   const restored = useRef<{
     orders?: string; risk?: RiskLevel; origin?: PlaceResult | null;
-    destination?: PlaceResult | null; homeBy?: string; maxDeadheadPct?: number; maxDowntime?: number; workDays?: string[]; legs?: number;
+    destination?: PlaceResult | null; homeBy?: string; maxDeadheadPct?: number; maxIdle?: number; workDays?: string[]; legs?: number;
   } | null>(null);
   if (restored.current === null && typeof window !== "undefined") {
     try {
@@ -520,7 +520,7 @@ export function SearchFilters({
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
   const [homeBy, setHomeBy] = useState<string>(r.homeBy ?? "");
   const [maxDeadheadPct, setMaxDeadheadPct] = useState(r.maxDeadheadPct ?? 15);
-  const [maxDowntime, setMaxDowntime] = useState<number>(r.maxDowntime ?? settings?.max_downtime_hours ?? 48);
+  const [maxIdle, setMaxIdle] = useState<number>(r.maxIdle ?? settings?.max_idle_hours ?? 48);
   const [workDays, setWorkDays] = useState<string[]>(r.workDays ?? settings?.work_days ?? []);
   const [legs, setLegs] = useState<number>(r.legs ?? (initialOrders === "one-way" ? 1 : 2));
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
@@ -545,10 +545,10 @@ export function SearchFilters({
     if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime, workDays, legs,
+        orders, risk, origin, destination, homeBy, maxDeadheadPct, maxIdle, workDays, legs,
       }));
     } catch {}
-  }, [orders, risk, origin, destination, homeBy, maxDeadheadPct, maxDowntime, compactBar]);
+  }, [orders, risk, origin, destination, homeBy, maxDeadheadPct, maxIdle, compactBar]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
@@ -585,7 +585,7 @@ export function SearchFilters({
                   risk,
                   ...(homeBy ? { home_by: homeBy } : {}),
                   max_deadhead_pct: maxDeadheadPct,
-                  ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
+                  ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
                   ...driverProfile,
                 });
               } else {
@@ -598,7 +598,7 @@ export function SearchFilters({
                   ...(destination ? { dest_lat: destination.lat, dest_lng: destination.lng } : {}),
                   legs,
                   trailer_types: driverProfile.trailer_types,
-                  ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
+                  ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
                 });
               }
             }
@@ -691,7 +691,7 @@ export function SearchFilters({
         risk,
         ...(homeBy ? { home_by: homeBy } : {}),
         max_deadhead_pct: maxDeadheadPct,
-        ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
+        ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
         ...driverProfile,
       });
     } else {
@@ -701,10 +701,10 @@ export function SearchFilters({
         ...(destination ? { dest_lat: destination.lat, dest_lng: destination.lng } : {}),
         legs,
         trailer_types: driverProfile.trailer_types,
-        ...(maxDowntime > 0 ? { max_layover_hours: maxDowntime } : {}),
+        ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
       });
     }
-  }, [origin, destination, orders, risk, homeMode, homeBy, maxDeadheadPct, maxDowntime, legs, profileKey, onClearSearch]);
+  }, [origin, destination, orders, risk, homeMode, homeBy, maxDeadheadPct, maxIdle, legs, profileKey, onClearSearch]);
 
   // Auto-search on filter changes (only after initial load settles)
   // Note: orders is NOT a trigger here — trip type changes are handled by prevTripType effect
@@ -713,14 +713,14 @@ export function SearchFilters({
     fireSearch();
   }, [risk, homeBy, maxDeadheadPct, legs]);
 
-  // Auto-search on driver profile or max downtime changes (debounced)
+  // Auto-search on driver profile or max idle changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
   useEffect(() => {
     if (!searchEnabled.current) return;
     onFilterPending?.();
     const id = setTimeout(() => fireSearch(), 1000);
     return () => clearTimeout(id);
-  }, [profileKey, maxDowntime]);
+  }, [profileKey, maxIdle]);
 
   useEffect(() => {
     if (!searchEnabled.current) return;
@@ -887,7 +887,7 @@ export function SearchFilters({
     const activeFilterCount = [
       homeBy,
       maxDeadheadPct !== 15,
-      maxDowntime !== 48,
+      maxIdle !== 48,
       risk !== "any",
     ].filter(Boolean).length;
 
@@ -916,7 +916,7 @@ export function SearchFilters({
         {mobileFiltersOpen && (
           <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/50">
             <HomeByPill value={homeBy} onChange={setHomeBy} />
-            <MaxDowntimePill value={maxDowntime} onChange={setMaxDowntime} />
+            <MaxIdlePill value={maxIdle} onChange={setMaxIdle} />
             <DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} />
             <AllFiltersPopover risk={risk} onRiskChange={setRisk} workDays={workDays} onWorkDaysChange={setWorkDays} />
           </div>
@@ -965,7 +965,7 @@ export function SearchFilters({
       {destPill}
       {legsPill}
       <div id="onborda-home-by"><HomeByPill value={homeBy} onChange={setHomeBy} /></div>
-      <div id="onborda-downtime"><MaxDowntimePill value={maxDowntime} onChange={setMaxDowntime} /></div>
+      <div id="onborda-idle"><MaxIdlePill value={maxIdle} onChange={setMaxIdle} /></div>
       <div id="onborda-deadhead"><DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} /></div>
       <div id="onborda-all-filters"><AllFiltersPopover risk={risk} onRiskChange={setRisk} workDays={workDays} onWorkDaysChange={setWorkDays} /></div>
       {clearButton}
