@@ -6,7 +6,7 @@
  *   - Any raw code containing "flat" (case-insensitive) WITH "53" → Flat 53
  */
 export const TRAILER_CATEGORIES = [
-  { label: "Flat 48", codes: ["F - FLAT", "F48 - FLAT, 48'", "FLAT - FLAT", "FD - FLAT OR DROP", "F/D - FLAT OR DROP", "F/SD - FLAT OR STEP"] },
+  { label: "Flat 48", codes: ["FLAT48"] },
 ] as const;
 
 // Combo/multi-type codes mapped to which categories they satisfy
