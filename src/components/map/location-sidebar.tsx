@@ -499,6 +499,18 @@ function RoundTripChainCard({
         isSelected ? "border-white/[0.12] shadow-[inset_2px_0_0_rgba(255,255,255,0.18)]" : "border-white/[0.10]"
       }`}
     >
+      {/* Left-edge handle — visible when selected, drawer is closed */}
+      {isSelected && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setShowInspector(true); }}
+          className="flex items-center justify-center w-6 shrink-0 rounded-l-xl bg-[#111111] hover:bg-[#1a1a1a] border-r border-white/[0.05] transition-colors"
+          title="View segment breakdown"
+        >
+          <ChevronRightIcon className="h-4 w-4 text-[#ff5601]" />
+        </button>
+      )}
+
       {/* Route details */}
       <div
         onClick={onClick}
@@ -724,36 +736,15 @@ function RoundTripChainCard({
         })()}
       </div>
 
-      {/* Right-edge handle — visible when selected, drawer is closed */}
-      {isSelected && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setShowInspector(true); }}
-          className="flex items-center justify-center w-6 shrink-0 rounded-r-xl bg-[#111111] hover:bg-[#1a1a1a] border-l border-white/[0.05] transition-colors"
-          title="View segment breakdown"
-        >
-          <ChevronLeftIcon className="h-4 w-4 text-muted-foreground/30" />
-        </button>
-      )}
-
-      {/* Inspector drawer — slides in from right as an overlay */}
+      {/* Inspector drawer — slides in from left as an overlay */}
       {isSelected && (
         <div
           className="absolute inset-0 flex"
           style={{
-            transform: showInspector ? "translateX(0)" : "translateX(100%)",
+            transform: showInspector ? "translateX(0)" : "translateX(-100%)",
             transition: "transform 320ms cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         >
-          {/* Left-edge close handle */}
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setShowInspector(false); }}
-            className="flex items-center justify-center w-6 shrink-0 bg-[#111111] hover:bg-[#1a1a1a] border-r border-white/[0.05] transition-colors"
-            title="Back to route"
-          >
-            <ChevronRightIcon className="h-4 w-4 text-muted-foreground/50" />
-          </button>
           {/* Inspector content */}
           <div className="flex-1 min-w-0 overflow-hidden">
             <RouteInspector
@@ -763,6 +754,15 @@ function RoundTripChainCard({
               onClose={() => setShowInspector(false)}
             />
           </div>
+          {/* Right-edge close handle */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setShowInspector(false); }}
+            className="flex items-center justify-center w-6 shrink-0 bg-[#111111] hover:bg-[#1a1a1a] border-l border-white/[0.05] transition-colors"
+            title="Back to route"
+          >
+            <ChevronLeftIcon className="h-4 w-4 text-muted-foreground/50" />
+          </button>
         </div>
       )}
     </div>
