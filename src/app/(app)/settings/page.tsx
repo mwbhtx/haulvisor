@@ -59,6 +59,7 @@ export default function SettingsPage() {
   const [insurancePerDay, setInsurancePerDay] = useState("");
   const [perDiemPerDay, setPerDiemPerDay] = useState("");
   const [avgMpg, setAvgMpg] = useState("");
+  const [avgDrivingHours, setAvgDrivingHours] = useState("");
   const [maxWeight, setMaxWeight] = useState("");
   const [maxAssigned, setMaxAssigned] = useState("");
   const [maxDowntime, setMaxDowntime] = useState("");
@@ -88,6 +89,7 @@ export default function SettingsPage() {
     setInsurancePerDay(settings.insurance_per_day != null ? String(settings.insurance_per_day) : "");
     setPerDiemPerDay(settings.per_diem_per_day != null ? String(settings.per_diem_per_day) : "");
     setAvgMpg(settings.avg_mpg != null ? String(settings.avg_mpg) : "");
+    setAvgDrivingHours(settings.avg_driving_hours_per_day != null ? String(settings.avg_driving_hours_per_day) : "");
     setMaxWeight(settings.max_weight != null ? String(settings.max_weight) : "");
     setMaxAssigned(settings.max_assigned_orders != null ? String(settings.max_assigned_orders) : "");
     setMaxDowntime(settings.max_downtime_hours != null ? String(settings.max_downtime_hours) : "");
@@ -124,6 +126,7 @@ export default function SettingsPage() {
     insurance_per_day: { min: 0, max: 300 },
     per_diem_per_day: { min: 0, max: 200 },
     avg_mpg: { min: 3, max: 12 },
+    avg_driving_hours_per_day: { min: 6, max: 11 },
     max_weight: { min: 1000, max: 80000 },
     max_assigned_orders: { min: 1, max: 5 },
   };
@@ -397,6 +400,18 @@ export default function SettingsPage() {
                 value={avgMpg}
                 onChange={(e) => handleNumberChange("avg_mpg", e.target.value, setAvgMpg)}
                 placeholder="6.0"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium block">Avg. Driving Hours/Day</label>
+              <Input
+                type="number"
+                min={6}
+                max={11}
+                step={1}
+                value={avgDrivingHours}
+                onChange={(e) => handleNumberChange("avg_driving_hours_per_day", e.target.value, setAvgDrivingHours)}
+                placeholder="11"
               />
             </div>
           </div>

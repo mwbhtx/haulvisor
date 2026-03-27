@@ -24,6 +24,7 @@ export interface Settings {
   insurance_per_day: number | null;
   per_diem_per_day: number | null;
   avg_mpg: number | null;
+  avg_driving_hours_per_day: number | null;
   max_downtime_hours: number | null;
   work_days: string[] | null;
   onboarding_completed: boolean;
