@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const [truckPaymentPerDay, setTruckPaymentPerDay] = useState("");
   const [insurancePerDay, setInsurancePerDay] = useState("");
   const [perDiemPerDay, setPerDiemPerDay] = useState("");
+  const [avgMpg, setAvgMpg] = useState("");
   const [maxWeight, setMaxWeight] = useState("");
   const [maxAssigned, setMaxAssigned] = useState("");
   const [maxDowntime, setMaxDowntime] = useState("");
@@ -86,6 +87,7 @@ export default function SettingsPage() {
     setTruckPaymentPerDay(settings.truck_payment_per_day != null ? String(settings.truck_payment_per_day) : "");
     setInsurancePerDay(settings.insurance_per_day != null ? String(settings.insurance_per_day) : "");
     setPerDiemPerDay(settings.per_diem_per_day != null ? String(settings.per_diem_per_day) : "");
+    setAvgMpg(settings.avg_mpg != null ? String(settings.avg_mpg) : "");
     setMaxWeight(settings.max_weight != null ? String(settings.max_weight) : "");
     setMaxAssigned(settings.max_assigned_orders != null ? String(settings.max_assigned_orders) : "");
     setMaxDowntime(settings.max_downtime_hours != null ? String(settings.max_downtime_hours) : "");
@@ -121,6 +123,7 @@ export default function SettingsPage() {
     truck_payment_per_day: { min: 0, max: 500 },
     insurance_per_day: { min: 0, max: 300 },
     per_diem_per_day: { min: 0, max: 200 },
+    avg_mpg: { min: 3, max: 12 },
     max_weight: { min: 1000, max: 80000 },
     max_assigned_orders: { min: 1, max: 5 },
   };
@@ -382,6 +385,18 @@ export default function SettingsPage() {
                 value={perDiemPerDay}
                 onChange={(e) => handleNumberChange("per_diem_per_day", e.target.value, setPerDiemPerDay)}
                 placeholder="69"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium block">Truck Avg. MPG</label>
+              <Input
+                type="number"
+                min={3}
+                max={12}
+                step={0.1}
+                value={avgMpg}
+                onChange={(e) => handleNumberChange("avg_mpg", e.target.value, setAvgMpg)}
+                placeholder="6.0"
               />
             </div>
           </div>

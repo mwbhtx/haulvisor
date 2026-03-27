@@ -64,6 +64,7 @@ export interface RoundTripSearchParams {
   truck_payment_per_day?: number;
   insurance_per_day?: number;
   per_diem_per_day?: number;
+  avg_mpg?: number;
 }
 
 export function useRoundTripSearch(companyId: string, params: RoundTripSearchParams | null) {
@@ -95,6 +96,7 @@ export function useRoundTripSearch(companyId: string, params: RoundTripSearchPar
         if (params.truck_payment_per_day != null) qs.set("truck_payment_per_day", String(params.truck_payment_per_day));
         if (params.insurance_per_day != null) qs.set("insurance_per_day", String(params.insurance_per_day));
         if (params.per_diem_per_day != null) qs.set("per_diem_per_day", String(params.per_diem_per_day));
+        if (params.avg_mpg != null) qs.set("avg_mpg", String(params.avg_mpg));
       }
       return fetchApi<RoundTripSearchResult>(`routes/${companyId}/search-round-trip?${qs.toString()}`);
     },

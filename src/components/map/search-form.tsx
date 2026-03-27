@@ -496,6 +496,7 @@ export function SearchFilters({
     truck_payment_per_day: settings.truck_payment_per_day ?? undefined,
     insurance_per_day: settings.insurance_per_day ?? undefined,
     per_diem_per_day: settings.per_diem_per_day ?? undefined,
+    avg_mpg: settings.avg_mpg ?? undefined,
   } : {};
 
   // Restore persisted filter state from sessionStorage
