@@ -1,8 +1,8 @@
 // Re-export shared types as the single source of truth
-export type { Order, Stopoff, PaginatedOrders } from "@mwbhtx/haulvisor-types";
-export type { RouteLeg, RouteChain, RouteSearchResult } from "@mwbhtx/haulvisor-types";
-export type { RoundTripChain, RoundTripLeg, RoundTripSearchResult } from "@mwbhtx/haulvisor-types";
-export type { RouteCostBreakdown } from "@mwbhtx/haulvisor-types";
+export type { Order, Stopoff, PaginatedOrders } from "@mwbhtx/haulvisor-core";
+export type { RouteLeg, RouteChain, RouteSearchResult } from "@mwbhtx/haulvisor-core";
+export type { RoundTripChain, RoundTripLeg, RoundTripSearchResult } from "@mwbhtx/haulvisor-core";
+export type { RouteCostBreakdown } from "@mwbhtx/haulvisor-core";
 
 // Analytics types (new API)
 export interface AnalyticsStats {
@@ -62,9 +62,9 @@ export interface LocationGroup {
   state: string;
   lat: number;
   lng: number;
-  orders: import("@mwbhtx/haulvisor-types").Order[];
-  routeChains: import("@mwbhtx/haulvisor-types").RouteChain[];
-  roundTripChains: import("@mwbhtx/haulvisor-types").RoundTripChain[];
+  orders: import("@mwbhtx/haulvisor-core").Order[];
+  routeChains: import("@mwbhtx/haulvisor-core").RouteChain[];
+  roundTripChains: import("@mwbhtx/haulvisor-core").RoundTripChain[];
 }
 
 export interface OrderFilters {

@@ -19,6 +19,6 @@ Never include personally identifying information in committed code or files. Thi
 
 This is a public repository. Never include company names, company-specific URLs, or any information that identifies which companies use this platform. Companies are identified by UUID only.
 
-## Shared Types
+## Shared Core Package
 
-Shared TypeScript interfaces and enums are published as `@mwbhtx/haulvisor-types` on GitHub Packages. The frontend imports from this package — do NOT duplicate type definitions locally.
+Shared TypeScript types, constants, and utility functions are published as `@mwbhtx/haulvisor-core` on GitHub Packages. Both frontend and backend import from this package — do NOT duplicate type definitions, constants, or cost-model logic locally.

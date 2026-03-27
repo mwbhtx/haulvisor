@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAuth } from "@/components/auth-provider";
 import { fetchApi } from "@/lib/api";
 import type { RouteChain, RoundTripChain, RoundTripLeg, LocationGroup } from "@/lib/types";
+import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
 import { LEG_COLORS } from "@/lib/route-colors";
 import { rateColor, netRateColor, routeProfitColor } from "@/lib/rate-color";
 
@@ -122,7 +123,7 @@ function routeKey(legs: { order_id?: string }[]): string {
   return legs.map((l) => l.order_id ?? "spec").join("|");
 }
 
-export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClose, onClearFilters, orderCount, maxWeight, isLoading, originFilter, destFilter, costPerMile = 1.5, orderUrlTemplate, onHoverLeg }: LocationSidebarProps) {
+export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClose, onClearFilters, orderCount, maxWeight, isLoading, originFilter, destFilter, costPerMile = DEFAULT_COST_PER_MILE, orderUrlTemplate, onHoverLeg }: LocationSidebarProps) {
   const { activeCompanyId } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [sortBy, setSortBy] = useState<SortKey>("daily_profit");

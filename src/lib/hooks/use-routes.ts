@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "@/lib/api";
 import type { RouteSearchResult } from "@/lib/types";
-import type { RoundTripSearchResult } from "@mwbhtx/haulvisor-types";
+import type { RoundTripSearchResult } from "@mwbhtx/haulvisor-core";
 
 export interface RouteSearchParams {
   origin_lat: number;

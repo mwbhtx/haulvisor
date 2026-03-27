@@ -16,6 +16,7 @@ import { isDemoUser } from "@/lib/auth";
 import { groupRoutesByLocation } from "@/lib/group-by-location";
 import type { LocationGroup } from "@/lib/types";
 import type { DrawableRouteLeg } from "@/lib/map/draw-route";
+import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
 
 const EMPTY_LOCATION: LocationGroup = {
   city: "",
@@ -291,7 +292,7 @@ export default function MapPage() {
             isLoading={!ready || isLoading || isRoundTripLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
             originFilter={originFilter}
             destFilter={destFilter}
-            costPerMile={(settings?.cost_per_mile as number | undefined) ?? 1.5}
+            costPerMile={(settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE}
             orderUrlTemplate={orderUrlTemplate}
             onHoverLeg={(idx) => hoverLegRef.current?.(idx)}
           />
@@ -386,7 +387,7 @@ export default function MapPage() {
                 destCity={destFilter?.city}
                 sortBy={mobileSortBy}
                 orderUrlTemplate={orderUrlTemplate}
-                costPerMile={(settings?.cost_per_mile as number | undefined) ?? 1.5}
+                costPerMile={(settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE}
               />
             );
           }

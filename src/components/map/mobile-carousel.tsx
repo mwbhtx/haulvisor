@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import type { RouteChain, RoundTripChain, RoundTripLeg, LocationGroup } from "@/lib/types";
 import { LEG_COLORS } from "@/lib/route-colors";
 import { rateColor, netRateColor, routeProfitColor } from "@/lib/rate-color";
+import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -147,7 +148,7 @@ interface MobileCarouselProps {
   costPerMile?: number;
 }
 
-export function MobileCarousel({ location, selectedIndex, onSelectIndex, originCity, destCity, sortBy, orderUrlTemplate, costPerMile = 1.5 }: MobileCarouselProps) {
+export function MobileCarousel({ location, selectedIndex, onSelectIndex, originCity, destCity, sortBy, orderUrlTemplate, costPerMile = DEFAULT_COST_PER_MILE }: MobileCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [watchlist, setWatchlist] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();

@@ -7,8 +7,8 @@
  *   Yellow: 1.3x – 1.7x cost — acceptable margin
  *   Green:  above 1.7x cost  — strong margin
  *
- * With a default cost of $1.60/mi this maps roughly to:
- *   Red:    < $2.08   Yellow: $2.08–$2.72   Green: > $2.72
+ * With a default cost of $1.50/mi this maps roughly to:
+ *   Red:    < $1.95   Yellow: $1.95–$2.55   Green: > $2.55
  */
 export function rateColor(ratePerMile: number, costPerMile: number): string {
   const ratio = ratePerMile / costPerMile;

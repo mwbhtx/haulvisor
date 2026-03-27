@@ -13,7 +13,7 @@ Haulvisor analyzes thousands of available loads and builds the most profitable m
 - **Animations:** Framer Motion, Shader Gradient
 - **UI:** Radix UI primitives, custom component library
 - **Testing:** Vitest, Testing Library
-- **Types:** Shared TypeScript interfaces published as an npm package (`@mwbhtx/haulvisor-types`)
+- **Core:** Shared types, constants, and cost-model utilities published as `@mwbhtx/haulvisor-core`
 
 ## Key Features
 

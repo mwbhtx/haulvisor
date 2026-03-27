@@ -46,7 +46,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { FetchSchedule } from "@mwbhtx/haulvisor-types";
+import type { FetchSchedule } from "@mwbhtx/haulvisor-core";
 
 interface Company {
   company_id: string;
