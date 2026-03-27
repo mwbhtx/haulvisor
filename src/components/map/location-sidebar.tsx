@@ -761,7 +761,7 @@ function RoundTripChainCard({
             className="flex items-center justify-center w-6 shrink-0 bg-[#111111] hover:bg-[#1a1a1a] border-l border-white/[0.05] transition-colors"
             title="Back to route"
           >
-            <ChevronLeftIcon className="h-4 w-4 text-muted-foreground/50" />
+            <ChevronLeftIcon className="h-4 w-4 text-[#ff5601]" />
           </button>
         </div>
       )}

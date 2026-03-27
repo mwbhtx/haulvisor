@@ -197,8 +197,8 @@ export function RouteInspector({
                 key={i}
                 className="flex items-center gap-2.5 px-3 py-2.5 border-b border-white/[0.05]"
               >
-                <ClockIcon className="h-3.5 w-3.5 text-amber-500/60 shrink-0" />
-                <span className="flex-1 text-sm text-amber-500/70">
+                <ClockIcon className="h-3.5 w-3.5 text-[#ff5601]/60 shrink-0" />
+                <span className="flex-1 text-sm text-[#ff5601]/70">
                   Waiting for pickup at {seg.city}
                 </span>
                 <span className="text-sm text-muted-foreground/70 tabular-nums w-14 text-right shrink-0">

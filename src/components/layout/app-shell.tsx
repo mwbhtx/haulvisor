@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-white/15 text-sidebar-foreground"
+                    ? "bg-[#161616] text-sidebar-foreground"
                     : "text-sidebar-foreground/50 hover:bg-white/10 hover:text-sidebar-foreground",
                 )}
               >
@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-white/15 text-sidebar-foreground"
+                        ? "bg-[#161616] text-sidebar-foreground"
                         : "text-sidebar-foreground/50 hover:bg-white/10 hover:text-sidebar-foreground",
                     )}
                   >
