@@ -3,6 +3,8 @@ export type { Order, Stopoff, PaginatedOrders } from "@mwbhtx/haulvisor-core";
 export type { RouteLeg, RouteChain, RouteSearchResult } from "@mwbhtx/haulvisor-core";
 export type { RoundTripChain, RoundTripLeg, RoundTripSearchResult } from "@mwbhtx/haulvisor-core";
 export type { RouteCostBreakdown } from "@mwbhtx/haulvisor-core";
+export type { TripPhase, TripPhaseKind, TripSimulationSummary } from "@mwbhtx/haulvisor-core";
+export { TRIP_DEFAULTS } from "@mwbhtx/haulvisor-core";
 
 // Analytics types (new API)
 export interface AnalyticsStats {
