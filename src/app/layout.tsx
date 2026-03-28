@@ -19,6 +19,12 @@ const bebasNeue = Bebas_Neue({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export const metadata: Metadata = {
   title: "haulvisor",
   description: "The load board that doesn't suck.",

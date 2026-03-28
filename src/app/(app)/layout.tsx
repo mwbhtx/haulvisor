@@ -22,7 +22,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           {isMobile ? (
             <div className="flex h-screen flex-col overflow-hidden">
-              <main className="flex-1 overflow-y-auto pb-16">{children}</main>
+              <main
+                className="flex-1 overflow-y-auto"
+                style={{ paddingBottom: "calc(4rem + var(--safe-area-bottom))" }}
+              >{children}</main>
               <MobileBottomNav />
             </div>
           ) : (
