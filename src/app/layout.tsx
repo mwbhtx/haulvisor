@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
-import { Providers } from "@/components/providers";
+import { Providers } from "@/platform/web/components/providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,6 +18,12 @@ const bebasNeue = Bebas_Neue({
   weight: "400",
   subsets: ["latin"],
 });
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
 
 export const metadata: Metadata = {
   title: "haulvisor",
