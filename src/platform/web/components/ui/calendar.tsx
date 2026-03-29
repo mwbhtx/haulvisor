@@ -13,9 +13,9 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
-        month_caption: "flex items-center justify-between px-2 pt-1",
+        month_caption: "flex items-center justify-center pt-1 relative h-10",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1",
+        nav: "absolute inset-x-0 top-0 flex items-center justify-between h-10 px-1",
         button_previous:
           "h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         button_next:
