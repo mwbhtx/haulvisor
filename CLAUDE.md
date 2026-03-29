@@ -25,6 +25,25 @@ Shared TypeScript types, constants, and utility functions live in the standalone
 
 After editing haulvisor-core locally, rebuild it (`cd ../haulvisor-core && npm run build`). Changes are picked up immediately through the symlink — just restart your dev server if types changed.
 
+## Mobile Text Size Standards
+
+The user base includes older users with vision difficulties. **Always use these minimum text sizes on mobile** — never use `text-xs` for primary content on mobile views:
+
+| Element | Minimum class | Size |
+|---------|--------------|------|
+| Body text, labels, values | `text-base` | 16px |
+| Secondary info (dates, metadata) | `text-sm` | 14px |
+| Section headings | `text-sm` uppercase | 14px |
+| Card titles / route names | `text-base` or `text-lg` | 16–18px |
+| Metric values ($/day, profit) | `text-lg` or `text-xl` | 18–20px |
+| Icons (tappable) | `h-5 w-5` minimum | 20px |
+| Tappable buttons | `h-9 w-9` minimum | 36px |
+| Badges / chips | `text-xs` | 12px (okay for non-essential labels) |
+
+`text-xs` (12px) is only acceptable for non-essential decorative labels (badges, tracking-wider labels). Everything a user needs to read or tap must meet the minimums above.
+
+**Country labels:** Never show country name (always USA). Use `city, state` format only. The shared helper `shortLabel()` in route-helpers or inline `.split(",").slice(0, 2)` handles this.
+
 ## Architecture
 
 This project uses a feature-based module structure (`core/`, `features/`, `platform/`). See README.md for the full directory layout and dependency rules. Page files in `app/` are thin shells (~10 lines) that delegate to platform-specific views.
