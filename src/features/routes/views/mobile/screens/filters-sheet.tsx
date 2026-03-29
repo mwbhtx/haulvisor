@@ -240,7 +240,7 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
             {homeBy && (
               <div className="border-t border-white/10 px-3 py-2">
                 <Button
-                  size="sm"
+                  size="default"
                   variant="ghost"
                   className="w-full text-muted-foreground"
                   onClick={() => setHomeBy("")}

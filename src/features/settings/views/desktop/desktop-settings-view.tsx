@@ -444,7 +444,7 @@ export function DesktopSettingsView() {
             <select
               value={maxAssigned}
               onChange={(e) => handleNumberChange("max_assigned_orders", e.target.value, setMaxAssigned)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">Not set</option>
               <option value="1">1</option>
@@ -462,7 +462,7 @@ export function DesktopSettingsView() {
             <select
               value={maxIdle}
               onChange={(e) => handleNumberChange("max_idle_hours", e.target.value, setMaxIdle)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">Not set (use filter bar)</option>
               <option value="24">1 Day</option>
@@ -569,11 +569,11 @@ export function DesktopSettingsView() {
                   setWorkDays([]);
                   if (initialized.current) save({ work_days: null });
                 }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 All days
               </button>
-              <span className="text-xs text-muted-foreground">/</span>
+              <span className="text-sm text-muted-foreground">/</span>
               <button
                 type="button"
                 onClick={() => {
@@ -581,7 +581,7 @@ export function DesktopSettingsView() {
                   setWorkDays(weekdays);
                   if (initialized.current) save({ work_days: weekdays });
                 }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Weekdays only
               </button>
@@ -651,7 +651,7 @@ function CertToggle({
             : "border-input"
         }`}
       >
-        {checked && <CheckIcon className="h-3 w-3" />}
+        {checked && <CheckIcon className="h-4 w-4" />}
       </div>
     </button>
   );

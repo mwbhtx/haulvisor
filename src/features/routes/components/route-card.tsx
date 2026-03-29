@@ -43,7 +43,7 @@ export function RouteCard({ chain, isRoundTrip, onClick, className }: RouteCardP
       <div className="flex items-center gap-4 text-base">
         {dailyProfit !== null && (
           <span className="flex items-center gap-1.5">
-            <TrendingUp className={cn("h-4 w-4", color)} />
+            <TrendingUp className={cn("h-5 w-5", color)} />
             <span className={cn("font-semibold", color)}>
               {formatCurrency(dailyProfit)}/day
             </span>

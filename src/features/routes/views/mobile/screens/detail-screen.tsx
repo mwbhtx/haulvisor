@@ -54,7 +54,7 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 text-base font-semibold">
               <span className="truncate">{origin}</span>
-              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="truncate">{dest}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">

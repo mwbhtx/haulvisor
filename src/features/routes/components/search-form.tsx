@@ -1100,7 +1100,7 @@ function AllFiltersPopover({
           <SlidersHorizontal className="h-3.5 w-3.5" />
           <span>All Filters</span>
           {activeCount > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               {activeCount}
             </span>
           )}
@@ -1143,7 +1143,7 @@ function AllFiltersPopover({
                         selected ? "border-primary bg-primary text-primary-foreground" : "border-input"
                       }`}
                     >
-                      {selected && <span className="text-[10px]">✓</span>}
+                      {selected && <span className="text-xs">✓</span>}
                     </div>
                   </button>
                 );
@@ -1201,7 +1201,7 @@ function AllFiltersPopover({
                       cert.checked ? "border-primary bg-primary text-primary-foreground" : "border-input"
                     }`}
                   >
-                    {cert.checked && <span className="text-[10px]">✓</span>}
+                    {cert.checked && <span className="text-xs">✓</span>}
                   </div>
                 </button>
               ))}

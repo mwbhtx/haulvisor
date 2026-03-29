@@ -81,7 +81,7 @@ export function OrdersFilters({ onSearch, children }: OrdersFiltersProps) {
           <SlidersHorizontal className="mr-2 h-4 w-4" />
           Filters
           {hasActiveFilters && (
-            <span className="ml-1.5 rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
+            <span className="ml-1.5 rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
               !
             </span>
           )}
