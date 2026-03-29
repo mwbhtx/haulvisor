@@ -220,10 +220,49 @@ html {
   padding-right: 0.75rem;
 }
 
-/* Onborda overlay must sit above all fixed UI elements (e.g. filter bar z-10, interaction
-   blocker z-900) so the shadow and card are never obscured by the filter bar on narrow screens. */
-[data-name="onborda-overlay"] {
-  z-index: 901;
+/* Driver.js tour popover — dark theme styling */
+.hv-tour-popover {
+  background-color: #111111 !important;
+  color: #f5f5f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+  max-width: 320px !important;
+}
+.hv-tour-popover .driver-popover-title {
+  color: #f5f5f5 !important;
+  font-size: 15px !important;
+}
+.hv-tour-popover .driver-popover-description {
+  color: #a1a1aa !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+.hv-tour-popover .driver-popover-description strong {
+  color: #e85d24 !important;
+}
+.hv-tour-popover .driver-popover-progress-text {
+  color: #a1a1aa !important;
+  font-size: 12px !important;
+}
+.hv-tour-popover .driver-popover-prev-btn {
+  color: #a1a1aa !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: transparent !important;
+}
+.hv-tour-popover .driver-popover-next-btn,
+.hv-tour-popover .driver-popover-close-btn-text {
+  background-color: #e85d24 !important;
+  color: white !important;
+  border: none !important;
+}
+.hv-tour-popover .driver-popover-close-btn {
+  color: #a1a1aa !important;
+}
+.hv-tour-popover .driver-popover-arrow-side-bottom .driver-popover-arrow,
+.hv-tour-popover .driver-popover-arrow-side-top .driver-popover-arrow,
+.hv-tour-popover .driver-popover-arrow-side-left .driver-popover-arrow,
+.hv-tour-popover .driver-popover-arrow-side-right .driver-popover-arrow {
+  border-color: #111111 !important;
 }
 
 

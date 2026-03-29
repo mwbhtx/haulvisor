@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { useOnborda } from "onborda";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
+import { tourSteps } from "@/platform/web/components/tour-steps";
 import { RouteMap } from "@/features/routes/components/route-map";
 import { SearchFilters } from "@/features/routes/components/search-form";
 import { LocationSidebar } from "@/features/routes/views/desktop/location-sidebar";
 import { useRouteSearch, useRoundTripSearch, type RouteSearchParams, type RoundTripSearchParams } from "@/core/hooks/use-routes";
 import { useActiveOrderCount } from "@/core/hooks/use-orders";
 import { useAuth } from "@/core/services/auth-provider";
-import { useSettings } from "@/core/hooks/use-settings";
+import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { isDemoUser } from "@/core/services/auth";
 import { groupRoutesByLocation } from "@/core/utils/group-by-location";
 import type { LocationGroup } from "@/core/types";
@@ -54,26 +56,41 @@ export function DesktopRoutesView() {
   const hasHomeBase = !settingsLoading && !!settings?.home_base_lat;
 
   // Start onboarding tour if no search is active and user hasn't completed it
-  const { startOnborda, closeOnborda, isOnbordaVisible } = useOnborda();
   const tourStarted = useRef(false);
+  const updateSettings = useUpdateSettings();
   // Reset tour guard when user changes (e.g. sign out → try demo again)
   useEffect(() => {
     tourStarted.current = false;
   }, [activeCompanyId]);
 
   useEffect(() => {
-    if (tourStarted.current || isOnbordaVisible) return;
+    if (tourStarted.current) return;
     if (settingsLoading) return;
     if (hasHomeBase && !isDemoUser()) return;
     if (hasActiveSearch) return;
-    // Real users: check backend setting; demo users: check sessionStorage
     if (settings?.onboarding_completed) return;
     const dismissed = sessionStorage.getItem("hv-tour-dismissed");
     if (dismissed) return;
     tourStarted.current = true;
-    const timer = setTimeout(() => startOnborda("routes-intro"), 500);
+    const timer = setTimeout(() => {
+      const driverObj = driver({
+        showProgress: true,
+        steps: tourSteps,
+        overlayColor: "black",
+        overlayOpacity: 0.7,
+        popoverClass: "hv-tour-popover",
+        onDestroyed: () => {
+          if (isDemoUser()) {
+            sessionStorage.setItem("hv-tour-dismissed", "1");
+          } else {
+            updateSettings.mutate({ onboarding_completed: true } as any);
+          }
+        },
+      });
+      driverObj.drive();
+    }, 500);
     return () => clearTimeout(timer);
-  }, [settingsLoading, hasHomeBase, hasActiveSearch, startOnborda, isOnbordaVisible, settings?.onboarding_completed, activeCompanyId]);
+  }, [settingsLoading, hasHomeBase, hasActiveSearch, settings?.onboarding_completed, activeCompanyId]);
 
   // Track whether any search has fired (distinguishes "initial load" from "user cleared search")
   const hasSearchedOnce = useRef(false);
@@ -228,7 +245,7 @@ export function DesktopRoutesView() {
             onOriginChange={setOriginFilter}
             onDestinationChange={setDestFilter}
             onFilterPending={() => setFilterPending(true)}
-            isOnboarding={isOnbordaVisible}
+            isOnboarding={false}
             hasHome={hasHomeBase}
             resetKey={filterResetKey}
             initialTripType="round-trip"

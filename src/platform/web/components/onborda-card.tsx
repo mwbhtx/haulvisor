@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, useEffect } from "react";
 import type { CardComponentProps } from "onborda";
 import { useOnborda } from "onborda";
 import { X } from "lucide-react";
@@ -17,7 +16,6 @@ export function OnbordaCard({
 }: CardComponentProps) {
   const { closeOnborda } = useOnborda();
   const updateSettings = useUpdateSettings();
-  const cardRef = useRef<HTMLDivElement>(null);
 
   const dismiss = () => {
     if (isDemoUser()) {
@@ -28,45 +26,8 @@ export function OnbordaCard({
     closeOnborda();
   };
 
-  // Nudge onborda's positioning wrapper so the card stays in the viewport.
-  // Onborda positions an absolute/fixed parent — we find it and adjust.
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-
-    const nudge = () => {
-      // Walk up to find the positioned parent onborda uses
-      const wrapper = el.closest("[style]")?.parentElement?.closest("[style]") as HTMLElement | null;
-      const target = wrapper ?? el;
-
-      const rect = target.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const pad = 12;
-
-      // Parse current left/top from inline style
-      const style = target.style;
-      const curLeft = parseFloat(style.left) || 0;
-      const curTop = parseFloat(style.top) || 0;
-
-      let newLeft = curLeft;
-      let newTop = curTop;
-
-      if (rect.left < pad) newLeft = curLeft + (pad - rect.left);
-      else if (rect.right > vw - pad) newLeft = curLeft + ((vw - pad) - rect.right);
-      if (rect.top < pad) newTop = curTop + (pad - rect.top);
-      else if (rect.bottom > vh - pad) newTop = curTop + ((vh - pad) - rect.bottom);
-
-      if (newLeft !== curLeft) style.left = `${newLeft}px`;
-      if (newTop !== curTop) style.top = `${newTop}px`;
-    };
-
-    const timers = [50, 200, 500].map((ms) => setTimeout(nudge, ms));
-    return () => timers.forEach(clearTimeout);
-  }, [currentStep]);
-
   return (
-    <div ref={cardRef} className="relative w-72 rounded-lg border border-border bg-card p-4 shadow-xl">
+    <div className="relative w-72 rounded-lg border border-border bg-card p-4 shadow-xl">
       {/* Close button */}
       <button
         onClick={dismiss}
