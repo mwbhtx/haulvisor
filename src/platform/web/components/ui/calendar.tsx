@@ -17,9 +17,9 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
         caption_label: "text-sm font-medium",
         nav: "flex items-center gap-1",
         button_previous:
-          "absolute left-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md border border-input",
+          "absolute left-4 h-9 w-9 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md border border-input",
         button_next:
-          "absolute right-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md border border-input",
+          "absolute right-4 h-9 w-9 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md border border-input",
         month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday:
