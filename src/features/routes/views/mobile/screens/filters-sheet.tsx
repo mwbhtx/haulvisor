@@ -137,7 +137,7 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
                 className={cn(
                   "flex-1 rounded-lg py-2.5 text-sm font-medium border transition-colors",
                   legs === n
-                    ? "border-foreground/30 bg-white/10 text-foreground"
+                    ? "border-primary bg-primary/15 text-primary"
                     : "border-white/10 text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -162,7 +162,7 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
                 className={cn(
                   "flex-1 rounded-lg py-2.5 text-sm font-medium border transition-colors",
                   risk === level
-                    ? "border-foreground/30 bg-white/10 text-foreground"
+                    ? "border-primary bg-primary/15 text-primary"
                     : "border-white/10 text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -208,7 +208,7 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
                 className={cn(
                   "rounded-lg px-4 py-2.5 text-sm font-medium border transition-colors",
                   maxIdleHours === opt.value
-                    ? "border-foreground/30 bg-white/10 text-foreground"
+                    ? "border-primary bg-primary/15 text-primary"
                     : "border-white/10 text-muted-foreground hover:text-foreground",
                 )}
               >
