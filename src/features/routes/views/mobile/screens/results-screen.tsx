@@ -100,9 +100,13 @@ export function ResultsScreen({
               {opt.label}
             </button>
           ))}
-          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-            {chains.length} route{chains.length !== 1 ? "s" : ""}
-          </span>
+          <button
+            type="button"
+            onClick={onFiltersTap}
+            className="ml-auto flex items-center justify-center h-7 w-7 rounded-full bg-white"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5 text-black" />
+          </button>
         </div>
       )}
 
