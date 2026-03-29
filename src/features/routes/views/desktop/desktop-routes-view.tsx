@@ -30,7 +30,6 @@ export function DesktopRoutesView() {
   const { data: settings, isLoading: settingsLoading } = useSettings();
   const [searchParams, setSearchParams] = useState<RouteSearchParams | null>(null);
   const [roundTripParams, setRoundTripParams] = useState<RoundTripSearchParams | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<LocationGroup | null>(null);
   const [selectedItemIndex, setSelectedItemIndex] = useState(0);
   const [filterResetKey, setFilterResetKey] = useState(0);
   const [originFilter, setOriginFilter] = useState<{ lat: number; lng: number; city: string } | null>(null);
@@ -41,7 +40,7 @@ export function DesktopRoutesView() {
   const hoverLegRef = useRef<((legIndex: number | null) => void) | null>(null);
 
   const { data, isLoading, isFetched } = useRouteSearch(activeCompanyId ?? "", searchParams);
-  const routes = data?.routes ?? [];
+  const routes = useMemo(() => data?.routes ?? [], [data?.routes]);
 
   const { data: roundTripResults, isLoading: isRoundTripLoading, isFetched: isRoundTripFetched } = useRoundTripSearch(activeCompanyId ?? "", roundTripParams);
 
@@ -109,29 +108,69 @@ export function DesktopRoutesView() {
 
   const [selectedRouteLegs, setSelectedRouteLegs] = useState<DrawableRouteLeg[] | null>(null);
 
-  // Derive the selected route for the map
+  // Derive sidebar location directly from query results (no useEffect delay)
+  const displayLocation = useMemo<LocationGroup>(() => {
+    if (roundTripParams !== null && roundTripResults) {
+      const homeRoutes = roundTripResults.routes ?? [];
+      if (homeRoutes.length > 0) {
+        const origin = roundTripResults.origin;
+        return {
+          city: origin.city,
+          state: origin.state,
+          lat: origin.lat,
+          lng: origin.lng,
+          orders: [],
+          routeChains: [],
+          roundTripChains: homeRoutes,
+        };
+      }
+    }
+    if (searchParams !== null && routes.length > 0) {
+      const locations = groupRoutesByLocation(routes);
+      if (locations.length > 0) {
+        const allRouteChains = locations.flatMap((l) => l.routeChains);
+        return {
+          city: "Search Results",
+          state: "",
+          lat: locations[0].lat,
+          lng: locations[0].lng,
+          orders: [],
+          routeChains: allRouteChains,
+          roundTripChains: [],
+        };
+      }
+    }
+    return EMPTY_LOCATION;
+  }, [roundTripParams, roundTripResults, searchParams, routes]);
+
+  // Derive selected route for the map
   const selectedRoute = useMemo<{ legs: DrawableRouteLeg[] } | null>(() => {
     if (selectedRouteLegs) return { legs: selectedRouteLegs };
-    if (!selectedLocation) return null;
-    if (selectedLocation.roundTripChains.length > 0) {
-      const chain = selectedLocation.roundTripChains[selectedItemIndex];
+    if (displayLocation.roundTripChains.length > 0) {
+      const chain = displayLocation.roundTripChains[selectedItemIndex];
       return chain ? { legs: chain.legs } : null;
     }
-    if (selectedLocation.routeChains.length > 0) {
-      const chain = selectedLocation.routeChains[selectedItemIndex];
+    if (displayLocation.routeChains.length > 0) {
+      const chain = displayLocation.routeChains[selectedItemIndex];
       return chain ? { legs: chain.legs } : null;
     }
     return null;
-  }, [selectedLocation, selectedItemIndex, selectedRouteLegs]);
+  }, [displayLocation, selectedItemIndex, selectedRouteLegs]);
 
-  // The location for the sidebar — either search results or empty
-  const displayLocation = selectedLocation ?? EMPTY_LOCATION;
+  // Reset selection when results change
+  const prevResultsRef = useRef(displayLocation);
+  useEffect(() => {
+    if (prevResultsRef.current !== displayLocation) {
+      prevResultsRef.current = displayLocation;
+      setSelectedItemIndex(0);
+      setSelectedRouteLegs(null);
+    }
+  }, [displayLocation]);
 
   const handleSearch = (p: RouteSearchParams) => {
     setFilterPending(false);
     setSearchParams(p);
     setRoundTripParams(null);
-    setSelectedLocation(null);
     setSelectedItemIndex(0);
     setSelectedRouteLegs(null);
   };
@@ -140,7 +179,6 @@ export function DesktopRoutesView() {
     setFilterPending(false);
     setRoundTripParams(p);
     setSearchParams(null);
-    setSelectedLocation(null);
     setSelectedItemIndex(0);
     setSelectedRouteLegs(null);
   };
@@ -148,7 +186,6 @@ export function DesktopRoutesView() {
   const handleSearchCleared = () => {
     setSearchParams(null);
     setRoundTripParams(null);
-    setSelectedLocation(null);
     setSelectedItemIndex(0);
     setSelectedRouteLegs(null);
     setOriginFilter(null);
@@ -163,45 +200,8 @@ export function DesktopRoutesView() {
 
   const handleSelectIndex = useCallback((index: number, legs?: DrawableRouteLeg[]) => {
     setSelectedItemIndex(index);
-    if (legs) setSelectedRouteLegs(legs);
+    setSelectedRouteLegs(legs ?? null);
   }, []);
-
-  // Populate sidebar when round-trip results arrive
-  useEffect(() => {
-    const homeRoutes = roundTripResults?.routes ?? [];
-    if (homeRoutes.length === 0 || roundTripParams === null) return;
-    const origin = roundTripResults!.origin;
-    setSelectedLocation({
-      city: origin.city,
-      state: origin.state,
-      lat: origin.lat,
-      lng: origin.lng,
-      orders: [],
-      routeChains: [],
-      roundTripChains: homeRoutes,
-    });
-    setSelectedItemIndex(-1);
-    setSelectedRouteLegs(null);
-  }, [roundTripResults, roundTripParams]);
-
-  // Populate sidebar when one-way results arrive
-  useEffect(() => {
-    if (routes.length === 0 || searchParams === null) return;
-    const locations = groupRoutesByLocation(routes);
-    if (locations.length === 0) return;
-    const allRouteChains = locations.flatMap((l) => l.routeChains);
-    setSelectedLocation({
-      city: "Search Results",
-      state: "",
-      lat: locations[0].lat,
-      lng: locations[0].lng,
-      orders: [],
-      routeChains: allRouteChains,
-      roundTripChains: [],
-    });
-    setSelectedItemIndex(-1);
-    setSelectedRouteLegs(null);
-  }, [routes, searchParams]);
 
   if (!activeCompanyId) {
     return (
@@ -243,7 +243,7 @@ export function DesktopRoutesView() {
           />
         </div>
 
-        {hasActiveSearch && <div className="w-[48%] min-w-[380px] max-w-[780px] shrink-0 flex-1 min-h-0 pointer-events-auto">
+        {hasActiveSearch && <div className="w-[48%] min-w-[475px] max-w-[780px] shrink-0 flex-1 min-h-0 pointer-events-auto">
           <LocationSidebar
             location={displayLocation}
             selectedIndex={selectedItemIndex}

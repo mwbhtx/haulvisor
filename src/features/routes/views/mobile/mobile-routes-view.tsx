@@ -66,13 +66,13 @@ export function MobileRoutesView() {
   const isRoundTrip = tripMode === "round-trip";
   const activeQuery = isRoundTrip ? roundTripQuery : oneWayQuery;
 
-  // Build chain list from results, sorted by daily earnings (highest first)
+  // Build chain list from results (sorting handled by ResultsScreen)
   const chains = useMemo(() => {
     if (isRoundTrip && roundTripQuery.data) {
-      return [...(roundTripQuery.data.routes ?? [])].sort((a, b) => b.daily_net_profit - a.daily_net_profit);
+      return roundTripQuery.data.routes ?? [];
     }
     if (!isRoundTrip && oneWayQuery.data) {
-      return [...(oneWayQuery.data.routes ?? [])].sort((a, b) => b.daily_net_profit - a.daily_net_profit);
+      return oneWayQuery.data.routes ?? [];
     }
     return [];
   }, [isRoundTrip, roundTripQuery.data, oneWayQuery.data]);

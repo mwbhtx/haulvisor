@@ -92,12 +92,12 @@ interface LocationSidebarProps {
   onHoverLeg?: (legIndex: number | null) => void;
 }
 
-type SortKey = "daily_profit" | "profit" | "deadhead";
+type SortKey = "profit" | "daily_profit" | "net_per_mile";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "daily_profit", label: "$/Day" },
   { key: "profit", label: "Profit" },
-  { key: "deadhead", label: "DH %" },
+  { key: "net_per_mile", label: "Net/mi" },
 ];
 
 function sortRouteChains(chains: RouteChain[], sortBy: SortKey): RouteChain[] {
@@ -105,7 +105,7 @@ function sortRouteChains(chains: RouteChain[], sortBy: SortKey): RouteChain[] {
   switch (sortBy) {
     case "profit": sorted.sort((a, b) => b.profit - a.profit); break;
     case "daily_profit": sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit); break;
-    case "deadhead": sorted.sort((a, b) => a.deadhead_pct - b.deadhead_pct); break;
+    case "net_per_mile": sorted.sort((a, b) => b.effective_rpm - a.effective_rpm); break;
   }
   return sorted;
 }
@@ -115,7 +115,7 @@ function sortRoundTripChains(chains: RoundTripChain[], sortBy: SortKey): RoundTr
   switch (sortBy) {
     case "profit": sorted.sort((a, b) => b.firm_profit - a.firm_profit); break;
     case "daily_profit": sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit); break;
-    case "deadhead": sorted.sort((a, b) => a.deadhead_pct - b.deadhead_pct); break;
+    case "net_per_mile": sorted.sort((a, b) => b.effective_rpm - a.effective_rpm); break;
   }
   return sorted;
 }
@@ -463,7 +463,7 @@ function RoundTripChainCard({
     <div
       data-route-idx={routeIdx}
       className={`relative flex rounded-xl overflow-hidden border ${
-        isSelected ? "border-white/[0.12] shadow-[inset_2px_0_0_rgba(255,255,255,0.18)]" : "border-white/[0.10]"
+        isSelected ? "border-white/30 shadow-[inset_2px_0_0_rgba(255,255,255,0.18)]" : "border-white/[0.10]"
       }`}
     >
       {/* Route details */}
@@ -476,18 +476,18 @@ function RoundTripChainCard({
         {/* Key metrics + bookmark */}
         <div className="flex justify-around text-center items-start px-4 py-3 border-b border-white/[0.05]">
           <div>
-            <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>Profit</p>
-            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
-              {formatCurrency(profit)}
-            </p>
-            <p className="text-xs tabular-nums mt-0.5" style={{ color: "rgba(205,205,205,0.4)" }}>{formatCurrency(chain.total_pay)} gross</p>
-          </div>
-          <div>
             <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>$/Day</p>
             <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
               {formatCurrency(chain.daily_net_profit)}
             </p>
             <p className="text-xs tabular-nums mt-0.5" style={{ color: "rgba(205,205,205,0.4)" }}>{chain.estimated_days.toFixed(1)} days est.</p>
+          </div>
+          <div>
+            <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>Profit</p>
+            <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
+              {formatCurrency(profit)}
+            </p>
+            <p className="text-xs tabular-nums mt-0.5" style={{ color: "rgba(205,205,205,0.4)" }}>{formatCurrency(chain.total_pay)} gross</p>
           </div>
           <div>
             <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>Net/mi</p>
@@ -538,9 +538,9 @@ function RoundTripChainCard({
           const returnCity = destCity || origin;
 
           return (
-            <div className="border-t border-white/[0.05]">
+            <div className="border-t border-white/[0.05] bg-[#1f1f1f]">
               {/* Cost breakdown toggle */}
-              <div className="border-b border-white/[0.05]">
+              <div className="border-b border-white/[0.05] bg-[#111111]">
                 <button
                   type="button"
                   className="flex items-center gap-1.5 text-sm transition-colors w-full px-4 py-2.5" style={{ color: "rgba(205,205,205,0.5)" }}
@@ -719,13 +719,13 @@ function RoundTripChainCard({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setShowInspector(false); }}
-            className="flex items-center justify-center w-7 shrink-0 bg-[#111111] hover:bg-[#1e1e1e] border-r border-white/[0.05] transition-colors"
+            className="flex items-center justify-center w-7 shrink-0 bg-[#303030] hover:bg-[#3a3a3a] border-r border-white/[0.05] transition-colors"
             title="Back to route"
           >
             <ChevronRightIcon className="h-4 w-4 text-[#cdcdcd]" />
           </button>
           {/* Inspector content */}
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex-1 min-w-0 overflow-hidden bg-[#303030]">
             <RouteInspector
               chain={chain}
               originCity={originCity || "Origin"}

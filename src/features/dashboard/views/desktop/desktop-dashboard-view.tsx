@@ -7,7 +7,6 @@ import { ActivityBreakdown } from "@/features/dashboard/components/activity-brea
 import { RatePayChart } from "@/features/dashboard/components/rate-pay-chart";
 import { ChurnChart } from "@/features/dashboard/components/churn-chart";
 import { StateBreakdown } from "@/features/dashboard/components/state-breakdown";
-import { TrailerTypeChart } from "@/features/dashboard/components/trailer-type-chart";
 import { TopLanesChart } from "@/features/dashboard/components/top-lanes-chart";
 import { AvailabilityChart } from "@/features/dashboard/components/availability-chart";
 import { TopCitiesChart } from "@/features/dashboard/components/top-cities-chart";
@@ -130,11 +129,10 @@ export function DesktopDashboardView() {
         </div>
       </div>
 
-      {/* Top Cities + States + Trailers + Lanes */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Top Cities + States + Lanes */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <TopCitiesChart companyId={companyId} from={from} to={to} />
         <StateBreakdown companyId={companyId} from={from} to={to} />
-        <TrailerTypeChart companyId={companyId} from={from} to={to} />
         <TopLanesChart companyId={companyId} from={from} to={to} bucket={bucket} />
       </div>
 

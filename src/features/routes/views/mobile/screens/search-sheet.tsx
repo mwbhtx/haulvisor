@@ -110,14 +110,15 @@ export function SearchSheet({
           </div>
         )}
 
-        {/* Search button — inline below inputs */}
-        <Button
-          onClick={handleSearch}
-          disabled={!canSearch}
-          className="w-full h-12 rounded-xl text-base font-semibold"
-        >
-          Search Routes
-        </Button>
+        {/* Search button — only visible once origin is selected */}
+        {canSearch && (
+          <Button
+            onClick={handleSearch}
+            className="w-full h-12 rounded-xl text-base font-semibold"
+          >
+            Search Routes
+          </Button>
+        )}
       </div>
     </motion.div>
   );

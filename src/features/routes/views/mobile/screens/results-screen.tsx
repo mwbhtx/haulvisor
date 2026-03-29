@@ -1,9 +1,38 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { RouteCard } from "@/features/routes/components/route-card";
 import type { RouteChain, RoundTripChain } from "@/core/types";
+
+type SortKey = "profit" | "daily_profit" | "net_per_mile";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "daily_profit", label: "$/Day" },
+  { key: "profit", label: "Profit" },
+  { key: "net_per_mile", label: "Net/mi" },
+];
+
+function sortChains(chains: (RouteChain | RoundTripChain)[], sortBy: SortKey): (RouteChain | RoundTripChain)[] {
+  const sorted = [...chains];
+  switch (sortBy) {
+    case "profit":
+      sorted.sort((a, b) => {
+        const ap = "firm_profit" in a ? a.firm_profit : a.profit;
+        const bp = "firm_profit" in b ? b.firm_profit : b.profit;
+        return bp - ap;
+      });
+      break;
+    case "daily_profit":
+      sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit);
+      break;
+    case "net_per_mile":
+      sorted.sort((a, b) => b.effective_rpm - a.effective_rpm);
+      break;
+  }
+  return sorted;
+}
 
 interface ResultsScreenProps {
   searchText: string;
@@ -24,6 +53,9 @@ export function ResultsScreen({
   onFiltersTap,
   onRouteSelect,
 }: ResultsScreenProps) {
+  const [sortBy, setSortBy] = useState<SortKey>("daily_profit");
+  const sortedChains = useMemo(() => sortChains(chains, sortBy), [chains, sortBy]);
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Search bar */}
@@ -50,6 +82,30 @@ export function ResultsScreen({
         </div>
       </div>
 
+      {/* Sort bar */}
+      {!isLoading && chains.length > 0 && (
+        <div className="flex items-center gap-1.5 px-4 py-2">
+          <span className="text-xs text-muted-foreground mr-1">Sort</span>
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setSortBy(opt.key)}
+              className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+                sortBy === opt.key
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-input hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+            {chains.length} route{chains.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+
       {/* Results */}
       <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4 space-y-2">
         {isLoading && (
@@ -69,7 +125,7 @@ export function ResultsScreen({
         )}
 
         {!isLoading &&
-          chains.map((chain, i) => (
+          sortedChains.map((chain, i) => (
             <RouteCard
               key={i}
               chain={chain}

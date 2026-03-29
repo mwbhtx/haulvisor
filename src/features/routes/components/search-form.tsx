@@ -725,8 +725,14 @@ export function SearchFilters({
 
   // Auto-search on driver profile or max idle changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
+  // Skip the first fire — the settings-restore effect already handled it
+  const profileInitialized = useRef(false);
   useEffect(() => {
     if (!searchEnabled.current) return;
+    if (!profileInitialized.current) {
+      profileInitialized.current = true;
+      return;
+    }
     onFilterPending?.();
     const id = setTimeout(() => fireSearch(), 1000);
     return () => clearTimeout(id);
