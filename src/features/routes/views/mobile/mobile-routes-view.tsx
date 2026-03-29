@@ -8,6 +8,7 @@ import { useRouteSearch, useRoundTripSearch, type RouteSearchParams, type RoundT
 import { useMobileRouteNav } from "@/features/routes/hooks/use-mobile-route-nav";
 import { useSaveRecentSearch, type RecentSearch } from "@/features/routes/hooks/use-recent-searches";
 import { DEFAULT_COST_PER_MILE, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS } from "@mwbhtx/haulvisor-core";
+import type { RouteChain, RoundTripChain } from "@/core/types";
 import type { PlaceResult } from "@/features/routes/components/search-form";
 import type { AdvancedFilters } from "./screens/filters-sheet";
 import { HomeScreen } from "./screens/home-screen";
@@ -207,9 +208,11 @@ export function MobileRoutesView() {
     [origin, destination, tripMode, buildAndFireSearch, pop],
   );
 
+  const [selectedChain, setSelectedChain] = useState<RouteChain | RoundTripChain | null>(null);
   const handleRouteSelect = useCallback(
-    (index: number) => {
-      push({ type: "detail", routeIndex: index });
+    (chain: RouteChain | RoundTripChain) => {
+      setSelectedChain(chain);
+      push({ type: "detail", routeIndex: 0 });
     },
     [push],
   );
@@ -232,8 +235,7 @@ export function MobileRoutesView() {
   }
 
   // Render based on current screen
-  const detailRouteIndex = currentScreen.type === "detail" ? currentScreen.routeIndex : 0;
-  const detailChain = chains[detailRouteIndex] ?? null;
+  const detailChain = currentScreen.type === "detail" ? selectedChain : null;
 
   return (
     <div className="relative h-full">

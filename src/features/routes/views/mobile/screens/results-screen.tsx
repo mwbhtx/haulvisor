@@ -14,7 +14,7 @@ interface ResultsScreenProps {
   isLoading: boolean;
   onSearchBarTap: () => void;
   onFiltersTap: () => void;
-  onRouteSelect: (index: number) => void;
+  onRouteSelect: (chain: RouteChain | RoundTripChain) => void;
 }
 
 export function ResultsScreen({
@@ -100,7 +100,7 @@ export function ResultsScreen({
               key={i}
               chain={chain}
               isRoundTrip={isRoundTrip}
-              onClick={() => onRouteSelect(i)}
+              onClick={() => onRouteSelect(chain)}
             />
           ))}
       </div>
