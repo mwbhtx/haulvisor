@@ -194,6 +194,7 @@ function SegmentCard({ leg, index }: { leg: RouteLeg | RoundTripLeg; index: numb
           {leg.origin_city}, {leg.origin_state} → {leg.destination_city}, {leg.destination_state}
         </span>
       </div>
+      {/* Two-column section: key metrics */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
         <div className="flex justify-between">
           <span>Pay</span>
@@ -203,30 +204,6 @@ function SegmentCard({ leg, index }: { leg: RouteLeg | RoundTripLeg; index: numb
           <span>Miles</span>
           <span className="font-medium text-foreground">{leg.miles.toLocaleString()}</span>
         </div>
-        {leg.pickup_date_early && (
-          <div className="flex justify-between">
-            <span>Pickup Early</span>
-            <span>{formatDateTime(leg.pickup_date_early)}</span>
-          </div>
-        )}
-        {leg.pickup_date_late && leg.pickup_date_late !== leg.pickup_date_early && (
-          <div className="flex justify-between">
-            <span>Pickup Late</span>
-            <span>{formatDateTime(leg.pickup_date_late)}</span>
-          </div>
-        )}
-        {leg.delivery_date_early && (
-          <div className="flex justify-between">
-            <span>Delivery Early</span>
-            <span>{formatDateTime(leg.delivery_date_early)}</span>
-          </div>
-        )}
-        {leg.delivery_date_late && leg.delivery_date_late !== leg.delivery_date_early && (
-          <div className="flex justify-between">
-            <span>Delivery Late</span>
-            <span>{formatDateTime(leg.delivery_date_late)}</span>
-          </div>
-        )}
         {leg.deadhead_miles > 0 && (
           <div className="flex justify-between">
             <span>Deadhead</span>
@@ -240,6 +217,36 @@ function SegmentCard({ leg, index }: { leg: RouteLeg | RoundTripLeg; index: numb
           </div>
         )}
       </div>
+
+      {/* Single-column section: dates */}
+      {(leg.pickup_date_early || leg.delivery_date_early) && (
+        <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-1.5 text-sm text-muted-foreground">
+          {leg.pickup_date_early && (
+            <div className="flex justify-between">
+              <span>Pickup Early</span>
+              <span>{formatDateTime(leg.pickup_date_early)}</span>
+            </div>
+          )}
+          {leg.pickup_date_late && leg.pickup_date_late !== leg.pickup_date_early && (
+            <div className="flex justify-between">
+              <span>Pickup Late</span>
+              <span>{formatDateTime(leg.pickup_date_late)}</span>
+            </div>
+          )}
+          {leg.delivery_date_early && (
+            <div className="flex justify-between">
+              <span>Delivery Early</span>
+              <span>{formatDateTime(leg.delivery_date_early)}</span>
+            </div>
+          )}
+          {leg.delivery_date_late && leg.delivery_date_late !== leg.delivery_date_early && (
+            <div className="flex justify-between">
+              <span>Delivery Late</span>
+              <span>{formatDateTime(leg.delivery_date_late)}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
