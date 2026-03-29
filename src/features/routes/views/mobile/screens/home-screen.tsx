@@ -32,14 +32,14 @@ export function HomeScreen({ onSearchBarTap, onFiltersTap, onRecentTap }: HomeSc
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSearchBarTap(); }}
           className="flex w-full items-center gap-3 rounded-full border border-white/10 bg-card px-4 py-3 text-left cursor-pointer"
         >
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="flex-1 text-sm text-muted-foreground">Search Routes</span>
+          <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+          <span className="flex-1 text-base text-muted-foreground">Search Routes</span>
         </div>
       </div>
 
       {/* Recent Searches */}
       <div className="flex-1 overflow-y-auto px-4 pt-4">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-4">
           Recent Searches
         </h2>
 
@@ -68,17 +68,17 @@ export function HomeScreen({ onSearchBarTap, onFiltersTap, onRecentTap }: HomeSc
                 className="flex w-full rounded-xl border border-white/10 bg-card p-4 text-left transition-colors active:bg-muted/50"
               >
                 <div className="flex-1 min-w-0 space-y-2">
-                  <span className="text-sm font-bold text-primary uppercase tracking-wider">
+                  <span className="text-base font-bold text-primary uppercase tracking-wider">
                     {formatTripMode(search.tripMode)}
                   </span>
-                  <div className="text-base">
+                  <div className="text-lg space-y-0.5">
                     <div>
                       <span className="text-muted-foreground">Origin: </span>
-                      <span className="font-medium">{shortLabel(search.origin.label)}</span>
+                      <span className="font-semibold">{shortLabel(search.origin.label)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Destination: </span>
-                      <span className="font-medium">{shortLabel(search.destination.label)}</span>
+                      <span className="font-semibold">{shortLabel(search.destination.label)}</span>
                     </div>
                   </div>
                 </div>
