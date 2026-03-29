@@ -28,33 +28,40 @@ export function OnbordaCard({
     closeOnborda();
   };
 
-  // Nudge card back into viewport if it overflows — uses margin to avoid
-  // conflicting with onborda's own transform-based positioning.
-  // Runs multiple times to catch async repositioning by onborda.
+  // Nudge onborda's positioning wrapper so the card stays in the viewport.
+  // Onborda positions an absolute/fixed parent — we find it and adjust.
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
-    el.style.marginLeft = "";
-    el.style.marginTop = "";
 
     const nudge = () => {
-      const rect = el.getBoundingClientRect();
+      // Walk up to find the positioned parent onborda uses
+      const wrapper = el.closest("[style]")?.parentElement?.closest("[style]") as HTMLElement | null;
+      const target = wrapper ?? el;
+
+      const rect = target.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const pad = 12;
-      let dx = 0;
-      let dy = 0;
 
-      if (rect.left < pad) dx = pad - rect.left;
-      else if (rect.right > vw - pad) dx = (vw - pad) - rect.right;
-      if (rect.top < pad) dy = pad - rect.top;
-      else if (rect.bottom > vh - pad) dy = (vh - pad) - rect.bottom;
+      // Parse current left/top from inline style
+      const style = target.style;
+      const curLeft = parseFloat(style.left) || 0;
+      const curTop = parseFloat(style.top) || 0;
 
-      if (dx !== 0) el.style.marginLeft = `${dx}px`;
-      if (dy !== 0) el.style.marginTop = `${dy}px`;
+      let newLeft = curLeft;
+      let newTop = curTop;
+
+      if (rect.left < pad) newLeft = curLeft + (pad - rect.left);
+      else if (rect.right > vw - pad) newLeft = curLeft + ((vw - pad) - rect.right);
+      if (rect.top < pad) newTop = curTop + (pad - rect.top);
+      else if (rect.bottom > vh - pad) newTop = curTop + ((vh - pad) - rect.bottom);
+
+      if (newLeft !== curLeft) style.left = `${newLeft}px`;
+      if (newTop !== curTop) style.top = `${newTop}px`;
     };
 
-    const timers = [100, 300, 600].map((ms) => setTimeout(nudge, ms));
+    const timers = [50, 200, 500].map((ms) => setTimeout(nudge, ms));
     return () => timers.forEach(clearTimeout);
   }, [currentStep]);
 
