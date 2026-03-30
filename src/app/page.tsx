@@ -60,15 +60,15 @@ export default function HomePage() {
   };
 
   return (
-    <div className="dark min-h-screen bg-primary/50 text-foreground">
+    <div className="dark min-h-screen text-foreground" style={{ backgroundColor: 'color-mix(in srgb, var(--primary) 40%, black)' }}>
       <ShaderGradientCanvas
         style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0, animation: "fade-in 1s ease-in 0.5s forwards" }}
-        pixelDensity={1}
+        pixelDensity={2}
         fov={40}
       >
         <ShaderGradient
           animate="on"
-          brightness={0.5}
+          brightness={0.2}
           cAzimuthAngle={180}
           cDistance={3.9}
           cPolarAngle={115}
@@ -80,20 +80,20 @@ export default function HomePage() {
           grain="off"
           lightType="env"
           positionX={-0.5}
-          positionY={0.8}
-          positionZ={0}
-          reflection={0.4}
-          rotationX={0}
-          rotationY={0}
-          rotationZ={235}
+          positionY={-0.8}
+          positionZ={1}
+          reflection={0.6}
+          rotationX={30}
+          rotationY={20}
+          rotationZ={205}
           shader="defaults"
           type="waterPlane"
           uAmplitude={0}
           uDensity={1.1}
           uFrequency={5.5}
-          uSpeed={0.1}
-          uStrength={2.4}
-          uTime={0.2}
+          uSpeed={0.01}
+          uStrength={2.7}
+          uTime={10.4}
           wireframe={false}
         />
       </ShaderGradientCanvas>
