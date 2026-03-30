@@ -16,6 +16,8 @@ import { groupRoutesByLocation } from "@/core/utils/group-by-location";
 import type { LocationGroup, RoundTripChain } from "@/core/types";
 import type { DrawableRouteLeg } from "@/core/utils/map/draw-route";
 import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/platform/web/components/ui/dialog";
+import { fetchApi } from "@/core/services/api";
 
 const EMPTY_LOCATION: LocationGroup = {
   city: "",
@@ -220,6 +222,19 @@ export function DesktopRoutesView() {
     setSelectedRouteLegs(legs ?? null);
   }, []);
 
+  const [commentsDialog, setCommentsDialog] = useState<{ orderId: string; comments: string; loading: boolean } | null>(null);
+
+  const handleShowComments = useCallback(async (orderId: string) => {
+    if (!activeCompanyId) return;
+    setCommentsDialog({ orderId, comments: "", loading: true });
+    try {
+      const order = await fetchApi<{ comments?: string }>(`orders/${activeCompanyId}/${orderId}`);
+      setCommentsDialog({ orderId, comments: order.comments || "No comments available.", loading: false });
+    } catch {
+      setCommentsDialog({ orderId, comments: "Failed to load comments.", loading: false });
+    }
+  }, [activeCompanyId]);
+
   const handleRouteSelect = useCallback((index: number, chain: RoundTripChain | null) => {
     setSelectedItemIndex(index);
     setSelectedChain(chain);
@@ -285,6 +300,7 @@ export function DesktopRoutesView() {
             costPerMile={(settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE}
             orderUrlTemplate={orderUrlTemplate}
             onHoverLeg={(idx) => hoverLegRef.current?.(idx)}
+            onShowComments={handleShowComments}
           />
         )}
 
@@ -299,6 +315,23 @@ export function DesktopRoutesView() {
           />
         </div>
       </div>
+
+      <Dialog open={commentsDialog !== null} onOpenChange={() => setCommentsDialog(null)}>
+        <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Comments — {commentsDialog?.orderId}</DialogTitle>
+          </DialogHeader>
+          {commentsDialog?.loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-primary" />
+            </div>
+          ) : (
+            <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed">
+              {commentsDialog?.comments}
+            </pre>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
