@@ -6,14 +6,14 @@ import "driver.js/dist/driver.css";
 import { tourSteps } from "@/platform/web/components/tour-steps";
 import { RouteMap } from "@/features/routes/components/route-map";
 import { SearchFilters } from "@/features/routes/components/search-form";
-import { LocationSidebar } from "@/features/routes/views/desktop/location-sidebar";
+import { RouteList } from "./route-list";
+import { RouteDetailPanel } from "./route-detail-panel";
 import { useRouteSearch, useRoundTripSearch, type RouteSearchParams, type RoundTripSearchParams } from "@/core/hooks/use-routes";
-import { useActiveOrderCount } from "@/core/hooks/use-orders";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { isDemoUser } from "@/core/services/auth";
 import { groupRoutesByLocation } from "@/core/utils/group-by-location";
-import type { LocationGroup } from "@/core/types";
+import type { LocationGroup, RoundTripChain } from "@/core/types";
 import type { DrawableRouteLeg } from "@/core/utils/map/draw-route";
 import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
 
@@ -33,6 +33,7 @@ export function DesktopRoutesView() {
   const [searchParams, setSearchParams] = useState<RouteSearchParams | null>(null);
   const [roundTripParams, setRoundTripParams] = useState<RoundTripSearchParams | null>(null);
   const [selectedItemIndex, setSelectedItemIndex] = useState(0);
+  const [selectedChain, setSelectedChain] = useState<RoundTripChain | null>(null);
   const [filterResetKey, setFilterResetKey] = useState(0);
   const [originFilter, setOriginFilter] = useState<{ lat: number; lng: number; city: string } | null>(null);
   const [destFilter, setDestFilter] = useState<{ lat: number; lng: number; city: string } | null>(null);
@@ -47,10 +48,6 @@ export function DesktopRoutesView() {
   const { data: roundTripResults, isLoading: isRoundTripLoading, isFetched: isRoundTripFetched } = useRoundTripSearch(activeCompanyId ?? "", roundTripParams);
 
   const orderUrlTemplate = roundTripResults?.order_url_template ?? data?.order_url_template;
-
-  // Lightweight count for the empty state display
-  const { data: countData } = useActiveOrderCount(activeCompanyId ?? "");
-  const orderCount = countData?.count ?? 0;
 
   const hasActiveSearch = searchParams !== null || roundTripParams !== null;
   const hasHomeBase = !settingsLoading && !!settings?.home_base_lat;
@@ -179,6 +176,14 @@ export function DesktopRoutesView() {
     }
   }, [displayLocation]);
 
+  // Resize map when detail panel transitions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [selectedChain]);
+
   const handleSearch = (p: RouteSearchParams) => {
     setFilterPending(false);
     setSearchParams(p);
@@ -215,6 +220,16 @@ export function DesktopRoutesView() {
     setSelectedRouteLegs(legs ?? null);
   }, []);
 
+  const handleRouteSelect = useCallback((index: number, chain: RoundTripChain | null) => {
+    setSelectedItemIndex(index);
+    setSelectedChain(chain);
+    if (chain) {
+      setSelectedRouteLegs(chain.legs as DrawableRouteLeg[]);
+    } else {
+      setSelectedRouteLegs(null);
+    }
+  }, []);
+
   if (!activeCompanyId) {
     return (
       <div className="flex h-full items-center justify-center -m-6 w-[calc(100%+3rem)] h-[calc(100%+3rem)]">
@@ -227,51 +242,62 @@ export function DesktopRoutesView() {
   }
 
   return (
-    <div className="relative overflow-hidden -m-6 w-[calc(100%+3rem)] h-[calc(100%+3rem)]">
-      {/* Map fills entire area */}
-      <RouteMap
-        selectedRoute={ready ? selectedRoute : undefined}
-        originCoords={originFilter}
-        destCoords={destFilter}
-        tripMode={tripMode}
-        onHoverLegRef={hoverLegRef}
-      />
+    <div className="flex flex-col overflow-hidden -m-6 w-[calc(100%+3rem)] h-[calc(100%+3rem)]">
+      {/* Filter bar — full width */}
+      <div className="bg-sidebar p-3 w-full shrink-0">
+        <SearchFilters
+          onSearch={handleSearch}
+          onSearchRoundTrip={handleSearchRoundTrip}
+          onClearSearch={handleSearchCleared}
+          onTripModeChange={setTripMode}
+          onOriginChange={setOriginFilter}
+          onDestinationChange={setDestFilter}
+          onFilterPending={() => setFilterPending(true)}
+          isOnboarding={isTourActive}
+          hasHome={hasHomeBase}
+          resetKey={filterResetKey}
+          initialTripType="round-trip"
+        />
+      </div>
 
-      {/* Filter bar + results panel */}
-      <div className="flex absolute top-4 left-4 right-4 bottom-4 z-10 flex-col gap-3 pointer-events-none">
-        <div className="pointer-events-auto bg-[#111111e8] border border-white/10 rounded-2xl p-3 w-full">
-          <SearchFilters
-            onSearch={handleSearch}
-            onSearchRoundTrip={handleSearchRoundTrip}
-            onClearSearch={handleSearchCleared}
-            onTripModeChange={setTripMode}
-            onOriginChange={setOriginFilter}
-            onDestinationChange={setDestFilter}
-            onFilterPending={() => setFilterPending(true)}
-            isOnboarding={isTourActive}
-            hasHome={hasHomeBase}
-            resetKey={filterResetKey}
-            initialTripType="round-trip"
-          />
-        </div>
+      {/* 3-column area */}
+      <div className="flex flex-1 min-h-0">
+        {/* Column 1: Route list */}
+        {hasActiveSearch && (
+          <div className="w-[300px] shrink-0 min-h-0">
+            <RouteList
+              roundTripChains={displayLocation.roundTripChains}
+              routeChains={displayLocation.routeChains}
+              selectedIndex={selectedItemIndex}
+              onSelectIndex={handleRouteSelect}
+              onClearFilters={hasActiveSearch ? handleClearSearch : undefined}
+              isLoading={!ready || isLoading || isRoundTripLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
+            />
+          </div>
+        )}
 
-        {hasActiveSearch && <div className="w-[48%] min-w-[475px] max-w-[780px] shrink-0 flex-1 min-h-0 pointer-events-auto">
-          <LocationSidebar
-            location={displayLocation}
-            selectedIndex={selectedItemIndex}
-            onSelectIndex={handleSelectIndex}
-            onClose={() => {}}
-            onClearFilters={hasActiveSearch ? handleClearSearch : undefined}
-            maxWeight={settings?.max_weight ?? null}
-            orderCount={orderCount}
-            isLoading={!ready || isLoading || isRoundTripLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
-            originFilter={originFilter}
-            destFilter={destFilter}
+        {/* Column 2: Route details */}
+        {hasActiveSearch && (
+          <RouteDetailPanel
+            chain={selectedChain}
+            originCity={originFilter?.city}
+            destCity={destFilter?.city}
             costPerMile={(settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE}
             orderUrlTemplate={orderUrlTemplate}
             onHoverLeg={(idx) => hoverLegRef.current?.(idx)}
           />
-        </div>}
+        )}
+
+        {/* Column 3: Map */}
+        <div className="flex-1 min-h-0 relative">
+          <RouteMap
+            selectedRoute={ready ? selectedRoute : undefined}
+            originCoords={originFilter}
+            destCoords={destFilter}
+            tripMode={tripMode}
+            onHoverLegRef={hoverLegRef}
+          />
+        </div>
       </div>
     </div>
   );
